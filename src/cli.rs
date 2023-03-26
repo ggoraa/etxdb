@@ -9,7 +9,7 @@ pub struct Arguments {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    ListPorts {
+    List {
         #[arg(short, long)]
         show_all: bool
     },

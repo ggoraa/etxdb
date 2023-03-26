@@ -1,33 +1,14 @@
-use std::{path::PathBuf, time::Duration};
+use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
 use colored::{ColoredString, Colorize};
 use prost::Message;
-use serialport::{SerialPortBuilder, SerialPortInfo, SerialPortType};
+use serialport::{SerialPortInfo, SerialPortType};
 
 use crate::edgetx;
 
 pub fn list(show_all: bool) -> Result<()> {
-    let ports: Vec<SerialPortInfo> = serialport::available_ports()?
-        .into_iter()
-        .filter(|port| {
-            if !show_all {
-                match port.port_type {
-                    SerialPortType::UsbPort(_) => true,
-                    _ => false,
-                }
-            } else {
-                true
-            }
-        })
-        .filter(|port| {
-            if show_all {
-                true
-            } else {
-                !port.port_name.contains("tty") && cfg!(target_os = "macos")
-            }
-        })
-        .collect();
+    let ports = edgetx::serial::available_devices(show_all)?;
 
     if ports.is_empty() {
         println!("{}", "No devices found.".yellow());
@@ -70,17 +51,14 @@ pub fn list(show_all: bool) -> Result<()> {
 }
 
 pub fn start(port: String, project_src: Option<PathBuf>) -> Result<()> {
+    // let mut start_debug_msg_container = edgetx::eldp::MessageContainer
     todo!()
 }
 
 pub fn init(port: String) -> Result<()> {
-    let mut serial_port = serial_port(port).open()?;
-    serial_port.write(
-        "init_eldp\n\r"
-        .as_bytes(),
-    )?;
-    let success_msg = "ELDP started".to_owned();
-    let success_msg_len = success_msg.as_bytes().len();
+    let mut serial_port = edgetx::serial::cli_port(port).open()?;
+    serial_port.write(edgetx::consts::ELDP_INIT_CLI_COMMAND.as_bytes())?;
+    let success_msg = edgetx::consts::ELDP_INIT_SUCCESS_RESPONSE.to_owned();
     let mut buf: [u8; 30] = [0; 30];
     serial_port.read(&mut buf)?;
 
@@ -102,11 +80,7 @@ pub fn stop(port: String) -> Result<()> {
     let mut buf: Vec<u8> = Vec::new();
     buf.reserve(msg.encoded_len());
     msg.encode(&mut buf)?;
-    let mut serial_port = serial_port(port).open()?;
+    let mut serial_port = edgetx::serial::cli_port(port).open()?;
     serial_port.write(&buf)?;
     Ok(())
-}
-
-fn serial_port(port: String) -> SerialPortBuilder {
-    return serialport::new(port, 115200).timeout(Duration::from_secs(2));
 }

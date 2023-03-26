@@ -91,21 +91,16 @@ message LuaDebugInfo {
  * messages
  */
 
-// All messages are contained in this message, so their type can
-// be easily identified while decoding them, without using a
-// brute force approach.
 message MessageContainer {
-    enum MessageType {
-        EXECUTE_EXPRESSION = 0;
-        EXECUTE_DEBUGGER_COMMAND = 1;
-        SET_BREAKPOINT = 2;
-        START_DEBUGGER = 3;
-        GET_BREAKPOINTS = 4;
-        DEBUG_STATUS = 5;
-        BREAKPOINTS = 6;
-    }
-    MessageType messageType = 1;
-    bytes bytes = 2;
+    oneof message {
+        ExecuteExpression executeExpression = 1;
+        ExecuteDebuggerCommand executeDebuggerCommand = 2;
+        SetBreakpoint setBreakpoint = 3;
+        StartDebugger startDebugger = 4;
+        GetBreakpoints getBreakpoints = 5;
+        DebugStatus debugStatus = 6;
+        Breakpoints breakpoints = 7;
+    };
 }
 
 // client to host

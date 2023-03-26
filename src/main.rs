@@ -1,16 +1,18 @@
-use anyhow::{Result, Error};
+use anyhow::{Error, Result};
 use clap::Parser;
+use cli::{args, handlers};
 
 pub mod cli;
 pub mod edgetx;
-pub mod error;
 
 fn main() -> Result<(), Error> {
     let args = cli::args::Arguments::parse();
 
     match args.command {
-        cli::args::Commands::List { show_all } => cli::subcommands::list(show_all)?,
-        cli::args::Commands::Connect { port, project_src } => cli::subcommands::connect(port, project_src)?,
+        args::Commands::List { show_all } => handlers::list(show_all)?,
+        args::Commands::Start { port, project_src } => handlers::start(port, project_src)?,
+        args::Commands::Init { port } => handlers::init(port)?,
+        args::Commands::Stop { port } => handlers::stop(port)?,
     }
     Ok(())
 }

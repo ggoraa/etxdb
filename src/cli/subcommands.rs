@@ -17,6 +17,10 @@ pub fn list(show_all: bool) -> Result<(), Error> {
                 true
             }
         })
+        .filter(|port| {
+            if cfg!(target_os = "macos") { return true }
+            if show_all { true } else { !port.port_name.contains("tty") }
+        })
         .collect();
 
     if ports.is_empty() {
@@ -41,6 +45,6 @@ pub fn list(show_all: bool) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn connect(port: String, project_src: Option<PathBuf>) {
+pub fn connect(port: String, project_src: Option<PathBuf>) -> Result<(), Error> {
     todo!()
 }

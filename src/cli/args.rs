@@ -10,7 +10,7 @@ pub struct Arguments {
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     List {
-        #[arg(short, long)]
+        #[arg(short = 'a', long = "all")]
         show_all: bool
     },
     Connect {

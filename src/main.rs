@@ -1,9 +1,5 @@
-use anyhow::{Context, Result, Error};
+use anyhow::{Result, Error};
 use clap::Parser;
-use colored::{Colorize, ColoredString};
-use prost::Message;
-use std::io::Cursor;
-use tokio_serial::{SerialPortInfo, SerialPortType};
 
 pub mod cli;
 pub mod edgetx;
@@ -14,7 +10,7 @@ fn main() -> Result<(), Error> {
 
     match args.command {
         cli::args::Commands::List { show_all } => cli::subcommands::list(show_all)?,
-        cli::args::Commands::Connect { port, project_src } => cli::subcommands::connect(port, project_src),
+        cli::args::Commands::Connect { port, project_src } => cli::subcommands::connect(port, project_src)?,
     }
     Ok(())
 }

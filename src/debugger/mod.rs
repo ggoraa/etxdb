@@ -3,6 +3,8 @@ use std::path::PathBuf;
 use anyhow::Result;
 use colored::Colorize;
 use prost::Message;
+use tokio::io::AsyncWriteExt;
+use tokio_serial::SerialPortBuilderExt;
 
 use crate::edgetx;
 use crate::edgetx::eldp;
@@ -11,8 +13,8 @@ pub mod args;
 pub mod session;
 pub mod consts;
 
-pub fn start(port: String, project_src: PathBuf) -> Result<()> {
-    let mut serial_port = edgetx::serial::cli_port(port).open()?;
+pub async fn start(port: String, project_src: PathBuf) -> Result<()> {
+    let mut serial_port = edgetx::serial::cli_port(port).open_native_async()?;
     println!("{}", "Starting a debug session...".white().italic());
 
     let mut msg_container = eldp::MessageContainer::default();
@@ -25,9 +27,9 @@ pub fn start(port: String, project_src: PathBuf) -> Result<()> {
     msg_buf.reserve(msg_container.encoded_len());
     msg_container.encode(&mut msg_buf)?;
 
-    serial_port.write(&mut msg_buf)?;
+    serial_port.write_all(&msg_buf).await?;
 
-    session::begin(serial_port, project_src);
+    session::begin(serial_port, project_src).await;
 
     Ok(())
 }

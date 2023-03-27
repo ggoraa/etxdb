@@ -172,7 +172,7 @@ message SwitchSerialMode {
 // client to host
 // request for uploading a program to the radio with all
 // info about a file that aren't its contents. Radio can
-// respond with `StartFileUploadAck`` with field `allowed`` being
+// respond with `StartProgramUploadAck`` with field `allowed`` being
 // `true`` or `false``. If it's false, field `reason`` will have
 // the, well, reason of why it was rejected.
 message StartProgramUpload {
@@ -182,6 +182,7 @@ message StartProgramUpload {
     optional int64 size = 3;
 }
 
+// host to client
 message StartProgramUploadAck {
     optional bool allowed = 1;
 
@@ -193,7 +194,7 @@ message StartProgramUploadAck {
     }
     optional RejectionReason reason = 2;
 
-    enum Warning {
+    enum Warnings {
         // Programs' uploaded file creation date is older than the one it's
         // trying to replace
         FILE_OLD = 0;
@@ -202,14 +203,16 @@ message StartProgramUploadAck {
         VERSION_SMALL = 1;
     }
 
-    repeated Warning warnings = 3;
+    repeated Warnings warnings = 3;
 }
 
+// client to host
 message ProgramUploadBatch {
     optional int64 index = 1;
     optional bytes contents = 2;
 }
 
+// host to client
 message ProgramUploadBatchAck {
     enum Status {
         ACCEPTED = 0;

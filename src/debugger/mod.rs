@@ -8,6 +8,8 @@ use crate::edgetx;
 use crate::edgetx::eldp;
 
 pub mod args;
+pub mod session;
+pub mod consts;
 
 pub fn start(port: String, project_src: PathBuf) -> Result<()> {
     let mut serial_port = edgetx::serial::cli_port(port).open()?;
@@ -24,6 +26,8 @@ pub fn start(port: String, project_src: PathBuf) -> Result<()> {
     msg_container.encode(&mut msg_buf)?;
 
     serial_port.write(&mut msg_buf)?;
+
+    session::begin(serial_port, project_src);
 
     Ok(())
 }

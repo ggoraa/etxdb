@@ -3,7 +3,7 @@ use serialport::{SerialPortBuilder, SerialPortInfo, SerialPortType};
 use std::time::Duration;
 
 pub fn cli_port(port: String) -> SerialPortBuilder {
-    return serialport::new(port, 115200).timeout(Duration::from_secs(2));
+    return serialport::new(port, 115200).timeout(Duration::from_secs(4));
 }
 
 pub fn available_devices(show_all: bool) -> Result<Vec<SerialPortInfo>> {

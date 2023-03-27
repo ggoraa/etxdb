@@ -23,7 +23,7 @@ pub fn available_devices(show_all: bool) -> Result<Vec<SerialPortInfo>> {
             if show_all {
                 true
             } else {
-                !port.port_name.contains("tty") && cfg!(target_os = "macos")
+                !port.port_name.contains("cu") && cfg!(target_os = "macos")
             }
         })
         .collect())

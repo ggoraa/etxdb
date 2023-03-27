@@ -3,8 +3,9 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Result};
 use colored::{ColoredString, Colorize};
 use prost::Message;
-use serialport::{SerialPortInfo, SerialPortType};
+use serialport::SerialPortType;
 
+use crate::debugger;
 use crate::edgetx;
 
 pub fn list(show_all: bool) -> Result<()> {
@@ -51,8 +52,8 @@ pub fn list(show_all: bool) -> Result<()> {
 }
 
 pub fn start(port: String, project_src: Option<PathBuf>) -> Result<()> {
-    // let mut start_debug_msg_container = edgetx::eldp::MessageContainer
-    todo!()
+    debugger::start(port, project_src.unwrap_or(std::env::current_dir()?))?;
+    Ok(())
 }
 
 pub fn init(port: String) -> Result<()> {

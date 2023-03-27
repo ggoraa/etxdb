@@ -3,6 +3,7 @@ use clap::Parser;
 use cli::{args, handlers};
 
 pub mod cli;
+pub mod debugger;
 pub mod edgetx;
 
 fn main() -> Result<(), Error> {

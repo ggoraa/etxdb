@@ -106,6 +106,10 @@ message MessageContainer {
         GetBreakpoints getBreakpoints = 5;
         DebugStatus debugStatus = 6;
         Breakpoints breakpoints = 7;
+        StartProgramUpload startProgramUpload = 8;
+        StartProgramUploadAck startProgramUploadAck = 9;
+        ProgramUploadBatch programUploadBatch = 10;
+        ProgramUploadBatchAck programUploadBatchAck = 11;
     };
 }
 

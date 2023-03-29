@@ -5,8 +5,8 @@ use colored::{ColoredString, Colorize};
 use prost::Message;
 use tokio_serial::SerialPortType;
 
-use crate::debugger;
-use crate::edgetx;
+use crate::{debugger, edgetx};
+use crate::edgetx::eldp;
 
 pub fn list(show_all: bool) -> Result<()> {
     let ports = edgetx::serial::available_devices(show_all)?;
@@ -77,10 +77,11 @@ pub fn init(port: String) -> Result<()> {
 }
 
 pub fn stop(port: String) -> Result<()> {
-    let msg = edgetx::eldp::StopDebugger::default();
+    let mut msg = eldp::SwitchSerialMode::default();
+    msg.mode = Some(eldp::switch_serial_mode::Mode::Cli.into());
     let mut buf: Vec<u8> = Vec::new();
     buf.reserve(msg.encoded_len());
-    msg.encode(&mut buf)?;
+    eldp::container(eldp::message_container::Message::SwitchSerialMode(msg)).encode(&mut buf)?;
     let mut serial_port = edgetx::serial::cli_port(port).open()?;
     serial_port.write(&buf)?;
     Ok(())

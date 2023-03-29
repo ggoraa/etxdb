@@ -1,6 +1,6 @@
 use anyhow::{Error, Result};
 use clap::Parser;
-use cli::{args, handlers};
+use cli::handlers;
 
 pub mod cli;
 pub mod debugger;
@@ -8,13 +8,13 @@ pub mod edgetx;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let args = cli::args::Arguments::parse();
+    let args = cli::Args::parse();
 
     match args.command {
-        args::Commands::List { show_all } => handlers::list(show_all)?,
-        args::Commands::Start { port, project_src } => handlers::start(port, project_src).await?,
-        args::Commands::Init { port } => handlers::init(port)?,
-        args::Commands::Stop { port } => handlers::stop(port)?,
+        cli::Commands::List { show_all } => handlers::list(show_all)?,
+        cli::Commands::Start { port, project_src } => handlers::start(port, project_src).await?,
+        cli::Commands::Init { port } => handlers::init(port)?,
+        cli::Commands::Stop { port } => handlers::stop(port)?,
     }
     Ok(())
 }

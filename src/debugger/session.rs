@@ -24,5 +24,8 @@ async fn serial_port_response(halt: &Cell<bool>, serial_port: &mut SerialStream)
 
     while !halt.get() {
         _ = serial_port.read(&mut rx_buf).await;
+        if rx_buf.is_empty() {
+            
+        }
     }
 }

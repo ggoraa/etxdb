@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-include!(concat!(env!("OUT_DIR"), "/edgetx.lua.debugger.rs"));
+include!(concat!(env!("OUT_DIR"), "/edgetx.eldp.rs"));
 
 pub fn container(for_message: message_container::Message) -> MessageContainer {
     let mut container = MessageContainer::default();

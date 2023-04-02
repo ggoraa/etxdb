@@ -106,15 +106,16 @@ message Request {
         SetBreakpoint setBreakpoint = 3;
         StartDebug startDebug = 4;
         GetBreakpoints getBreakpoints = 5;
-        SwitchSerialMode switchSerialMode = 8;
+        SwitchSerialMode switchSerialMode = 6;
+        StopDebug stopDebug = 7;
     }
 }
 
 // host to client
 message Response {
     oneof content {
-        DebugStatus debugStatus = 6;
-        Breakpoints breakpoints = 7;
+        DebugStatus debugStatus = 1;
+        Breakpoints breakpoints = 2;
     };
 }
 
@@ -147,6 +148,9 @@ message StartDebug {
     optional string targetName = 2;
     repeated Breakpoint breakpoints = 3;
 }
+
+// client to host
+message StopDebug { }
 
 // client to host
 message GetBreakpoints {

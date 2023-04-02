@@ -5,8 +5,8 @@ use colored::{ColoredString, Colorize};
 use prost::Message;
 use tokio_serial::SerialPortType;
 
-use crate::{debugger, edgetx};
 use crate::edgetx::eldp;
+use crate::{debugger, edgetx};
 
 pub fn list(show_all: bool) -> Result<()> {
     let ports = edgetx::serial::available_devices(show_all)?;
@@ -67,7 +67,7 @@ pub fn init(port: String) -> Result<()> {
                 "Failed to init debug connection ({}), maybe it's already initialised?",
                 err
             ))
-        },
+        }
         _ => {}
     }
 

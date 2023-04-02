@@ -1,43 +1,69 @@
 use std::io::Write;
-use std::{path::PathBuf, cell::Cell};
+use std::{cell::Cell, path::PathBuf};
 
-use tokio::io::{AsyncReadExt, AsyncBufReadExt};
+use colored::Colorize;
 use tokio::io;
-use tokio_serial::{SerialStream};
+use tokio::io::{AsyncBufReadExt, AsyncReadExt};
+use tokio_serial::SerialStream;
+
+use anyhow::Result;
 
 use crate::debugger;
+use crate::edgetx::eldp;
 
-pub async fn begin(mut serial_port: SerialStream, _src: PathBuf) {
+pub async fn begin(mut serial_port: SerialStream, _src: PathBuf) -> Result<()> {
     let halt = Cell::new(false);
 
     // starting handlers for several actions
-    tokio::join!(
-        cli_task(&halt),
-        serial_port_task(&halt, &mut serial_port)
-    );
+    tokio::join!(cli_task(&halt), serial_port_task(&halt, &mut serial_port));
+    stop_session(&mut serial_port)?;
+    Ok(())
 }
 
 async fn cli_task(halt: &Cell<bool>) {
     let mut reader = io::BufReader::new(io::stdin());
     let mut buf = Vec::new();
 
-    prompt();
-
     while !halt.get() {
-        match reader.read_until(b'\n', &mut buf).await {
-            Ok(_) => {
-                println!("received data: {:?}", String::from_utf8(buf.clone()));
-            },
-            Err(err) => panic!("{}", err),
+        prompt();
+
+        reader.read_until(b'\n', &mut buf).await.unwrap();
+        let command_string = String::from_utf8(buf.clone()).unwrap();
+        let command_vec: Vec<String> = command_string
+            .split(' ')
+            .map(|x| x.replace("\n", ""))
+            .collect();
+
+        match command_vec[0].as_str() {
+            "c" | "continue" => {
+                println!("continue");
+            }
+            "b" | "breakpoint" => {
+                println!("breakpoint");
+            }
+            "p" | "print" => {
+                println!("breakpoint");
+            }
+            "q" | "quit" => {
+                println!("quit");
+                halt.set(true);
+            }
+            _ => todo!(),
         }
         buf.clear();
-        prompt();
     }
+}
+
+fn stop_session(serial_port: &mut SerialStream) -> Result<()> {
+    let request = eldp::make_request(eldp::request::Content::StopDebug(eldp::StopDebug::default()));
+    let buf = eldp::encode(request).unwrap(); // will never fail
+    serial_port.write(&buf)?;
+    Ok(())
 }
 
 #[inline]
 fn prompt() {
-    print!("{} ", debugger::consts::PROMPT_INPUT_NAME);
+    print!("{} ", debugger::consts::PROMPT_INPUT_NAME.white().bold());
     std::io::stdout().flush().unwrap();
 }
 
@@ -46,8 +72,6 @@ async fn serial_port_task(halt: &Cell<bool>, serial_port: &mut SerialStream) {
 
     while !halt.get() {
         _ = serial_port.read(&mut rx_buf).await;
-        if rx_buf.is_empty() {
-            
-        }
+        if rx_buf.is_empty() {}
     }
 }

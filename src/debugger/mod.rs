@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use colored::Colorize;
 use prost::Message;
 use tokio::io::AsyncWriteExt;
 use tokio_serial::SerialPortBuilderExt;
@@ -15,7 +14,6 @@ pub mod consts;
 
 pub async fn start(port: String, project_src: PathBuf) -> Result<()> {
     let mut serial_port = edgetx::serial::cli_port(port).open_native_async()?;
-    println!("{}", "Starting a debug session...".white().italic());
 
     let mut msg = eldp::StartDebug::default();
     msg.target_type = Some(eldp::DebugTarget::Script.into());

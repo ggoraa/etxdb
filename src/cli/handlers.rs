@@ -61,7 +61,15 @@ pub fn init(port: String) -> Result<()> {
     serial_port.write(edgetx::consts::ELDP_INIT_CLI_COMMAND.as_bytes())?;
     let success_msg = edgetx::consts::ELDP_INIT_SUCCESS_RESPONSE.to_owned();
     let mut buf: [u8; 30] = [0; 30];
-    serial_port.read(&mut buf)?;
+    match serial_port.read(&mut buf) {
+        Err(err) => {
+            return Err(anyhow!(
+                "Failed to init debug connection ({}), maybe it's already initialised?",
+                err
+            ))
+        },
+        _ => {}
+    }
 
     let response = String::from_utf8(buf.to_vec())?;
 
@@ -69,7 +77,7 @@ pub fn init(port: String) -> Result<()> {
         return Ok(());
     } else {
         return Err(anyhow!(
-            "Failed to init debugger, received response \"{}\", expected \"{}\"",
+            "Failed to init debug connection, received response \"{}\", expected \"{}\"",
             response,
             success_msg
         ));

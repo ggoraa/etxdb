@@ -81,7 +81,7 @@ pub fn stop(port: String) -> Result<()> {
     msg.mode = Some(eldp::switch_serial_mode::Mode::Cli.into());
     let mut buf: Vec<u8> = Vec::new();
     buf.reserve(msg.encoded_len());
-    eldp::container(eldp::message_container::Message::SwitchSerialMode(msg)).encode(&mut buf)?;
+    eldp::make_request(eldp::request::Content::SwitchSerialMode(msg)).encode(&mut buf)?;
     let mut serial_port = edgetx::serial::cli_port(port).open()?;
     serial_port.write(&buf)?;
     Ok(())

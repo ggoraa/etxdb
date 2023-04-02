@@ -2,10 +2,10 @@ use anyhow::Result;
 
 include!(concat!(env!("OUT_DIR"), "/edgetx.eldp.rs"));
 
-pub fn container(for_message: message_container::Message) -> MessageContainer {
-    let mut container = MessageContainer::default();
-    container.message = Some(for_message);
-    container
+pub fn make_request(content: request::Content) -> Request {
+    let mut request = Request::default();
+    request.content = Some(content);
+    request
 }
 
 pub fn encode<T: prost::Message>(message: T) -> Result<Vec<u8>> {

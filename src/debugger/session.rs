@@ -1,11 +1,13 @@
 use std::io::Write;
 use std::sync::Arc;
+use std::time::Duration;
 use std::{cell::Cell, path::PathBuf};
 
 use colored::Colorize;
 use tokio::io;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 use tokio::sync::Mutex;
+use tokio::time::timeout;
 use tokio_serial::SerialStream;
 
 use anyhow::Result;
@@ -21,11 +23,10 @@ pub async fn begin(mut serial_port: SerialStream, src: PathBuf) -> Result<()> {
     let mut state = State::default();
 
     // all of this is so that they can be safely accessed
-    // between several tasks
+    // between tasks
     let state = new_arcmut!(state);
     let serial_port = new_arcmut!(serial_port);
 
-    // starting tasks for several actions
     tokio::join!(
         cli_task(&halt, state.clone()),
         serial_port_task(&halt, serial_port.clone(), state.clone())
@@ -56,13 +57,6 @@ async fn cli_task(halt: &Cell<bool>, state: arcmut!(State)) {
     }
 }
 
-async fn stop_session(serial_port: arcmut!(SerialStream)) -> Result<()> {
-    let request = eldp::make_request(eldp::request::Content::StopDebug(eldp::StopDebug::default()));
-    let buf = eldp::encode(request).unwrap(); // will never fail
-    serial_port.lock().await.write(&buf)?;
-    Ok(())
-}
-
 async fn serial_port_task(
     halt: &Cell<bool>,
     serial_port: arcmut!(SerialStream),
@@ -71,9 +65,20 @@ async fn serial_port_task(
     let mut rx_buf = Vec::<u8>::new();
 
     while !halt.get() {
-        _ = serial_port.lock().await.read(&mut rx_buf).await;
+        if let Ok(data) = timeout(
+            Duration::from_millis(200),
+             serial_port.lock().await.read(&mut rx_buf)).await {
+            // TODO: Implement serial communication
+        }
         if rx_buf.is_empty() {}
     }
+}
+
+async fn stop_session(serial_port: arcmut!(SerialStream)) -> Result<()> {
+    let request = eldp::make_request(eldp::request::Content::StopDebug(eldp::StopDebug::default()));
+    let buf = eldp::encode(request).unwrap(); // will never fail
+    serial_port.lock().await.write(&buf)?;
+    Ok(())
 }
 
 #[inline]

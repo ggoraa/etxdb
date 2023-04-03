@@ -12,7 +12,7 @@ use tokio_serial::SerialStream;
 
 use anyhow::Result;
 
-use super::handlers;
+use super::cli;
 use super::state::State;
 use crate::edgetx::eldp;
 use crate::{arcmut, debugger, new_arcmut};
@@ -51,7 +51,7 @@ async fn cli_task(halt: &Cell<bool>, state: arcmut!(State)) {
             .map(|x| x.replace("\n", ""))
             .collect();
 
-        handlers::cli(&command_vec, halt, state.clone());
+        cli::execute(&command_vec, halt, state.clone());
 
         buf.clear();
     }

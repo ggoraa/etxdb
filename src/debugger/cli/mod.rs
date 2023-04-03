@@ -7,25 +7,17 @@ use inquire::Select;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+use self::handlers::{breakpoint_command, continue_command, print_command};
+
 use super::state::State;
 
-fn continuec(state: arcmut!(State)) {
-    println!("continue");
-}
+pub mod handlers;
 
-fn breakpointc(state: arcmut!(State)) {
-    println!("breakpoint");
-}
-
-fn printc(state: arcmut!(State)) {
-    println!("print");
-}
-
-pub fn cli(command: &Vec<String>, halt: &Cell<bool>, state: arcmut!(State)) {
+pub fn execute(command: &Vec<String>, halt: &Cell<bool>, state: arcmut!(State)) {
     match command[0].as_str() {
-        "c" | "continue" => continuec(state.clone()),
-        "b" | "breakpoint" => breakpointc(state.clone()),
-        "p" | "print" => printc(state.clone()),
+        "c" | "continue" => continue_command(state.clone()),
+        "b" | "breakpoint" => breakpoint_command(state.clone()),
+        "p" | "print" => print_command(state.clone()),
         "q" | "quit" => {
             const YES_CHOICE: &str = "Yes, stop and quit";
             const NO_CHOICE: &str = "No, abort!";
@@ -36,12 +28,10 @@ pub fn cli(command: &Vec<String>, halt: &Cell<bool>, state: arcmut!(State)) {
             .prompt();
 
             match answer {
-                Ok(choice) => {
-                    match choice {
-                        YES_CHOICE => halt.set(true),
-                        _ => {}
-                    }
-                }
+                Ok(choice) => match choice {
+                    YES_CHOICE => halt.set(true),
+                    _ => {}
+                },
                 Err(_) => println!("{}", "An error occured. Abort.".red().bold()),
             }
         }

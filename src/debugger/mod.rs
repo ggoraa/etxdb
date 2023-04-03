@@ -9,9 +9,9 @@ use crate::edgetx;
 use crate::edgetx::eldp;
 
 pub mod consts;
-pub mod handlers;
 pub mod session;
 pub mod state;
+pub mod cli;
 
 #[macro_export]
 macro_rules! arcmut {

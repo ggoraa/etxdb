@@ -10,17 +10,12 @@ use tokio_serial::SerialStream;
 
 use anyhow::Result;
 
+use super::handlers;
+use super::state::State;
 use crate::edgetx::eldp;
 use crate::{arcmut, debugger, new_arcmut};
 
-use super::handlers;
-
-#[derive(Default)]
-pub struct State {
-    // To be filled
-}
-
-pub async fn begin(mut serial_port: SerialStream, _src: PathBuf) -> Result<()> {
+pub async fn begin(mut serial_port: SerialStream, src: PathBuf) -> Result<()> {
     let halt = Cell::new(false);
 
     let mut state = State::default();

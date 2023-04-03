@@ -2,15 +2,10 @@ use std::cell::Cell;
 
 use crate::arcmut;
 
-use super::session::State;
 use std::sync::Arc;
-use dbg_cli_derive::Commands;
 use tokio::sync::Mutex;
 
-#[derive(Commands)]
-enum CliCommands {
-
-}
+use super::state::State;
 
 // TODO: Rewrite using #[derive]
 pub fn cli(command: &Vec<String>, halt: &Cell<bool>, state: arcmut!(State)) {
@@ -22,7 +17,7 @@ pub fn cli(command: &Vec<String>, halt: &Cell<bool>, state: arcmut!(State)) {
             println!("breakpoint");
         }
         "p" | "print" => {
-            println!("breakpoint");
+            println!("print");
         }
         "q" | "quit" => {
             println!("quit");

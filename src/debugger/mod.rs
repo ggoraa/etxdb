@@ -11,6 +11,7 @@ use crate::edgetx::eldp;
 pub mod consts;
 pub mod handlers;
 pub mod session;
+pub mod state;
 
 #[macro_export]
 macro_rules! arcmut {

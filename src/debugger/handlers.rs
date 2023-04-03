@@ -6,6 +6,7 @@ use super::session::State;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+// TODO: Rewrite using #[derive]
 pub fn cli(command: &Vec<String>, halt: &Cell<bool>, state: arcmut!(State)) {
     match command[0].as_str() {
         "c" | "continue" => {
@@ -21,6 +22,9 @@ pub fn cli(command: &Vec<String>, halt: &Cell<bool>, state: arcmut!(State)) {
             println!("quit");
             halt.set(true);
         }
-        _ => todo!(),
+        "h" | "help" => {
+            todo!()
+        }
+        _ => println!("Unknown command {}", command[0].as_str()),
     }
 }

@@ -29,6 +29,7 @@ macro_rules! new_arcmut {
 pub async fn start(port: String, project_src: PathBuf) -> Result<()> {
     let mut serial_port = edgetx::serial::cli_port(port).open_native_async()?;
 
+    // TODO: Use CLI arguments
     let mut msg = eldp::StartDebug::default();
     msg.target_type = Some(eldp::DebugTarget::Script.into());
     msg.target_name = Some("file.lua".to_owned());

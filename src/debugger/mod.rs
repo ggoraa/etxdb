@@ -9,7 +9,22 @@ use crate::edgetx;
 use crate::edgetx::eldp;
 
 pub mod consts;
+pub mod handlers;
 pub mod session;
+
+#[macro_export]
+macro_rules! arcmut {
+    ($typename:ident) => {
+        Arc<Mutex<&mut $typename>>
+    };
+}
+
+#[macro_export]
+macro_rules! new_arcmut {
+    ($value:expr) => {
+        Arc::new(Mutex::new(&mut $value))
+    };
+}
 
 pub async fn start(port: String, project_src: PathBuf) -> Result<()> {
     let mut serial_port = edgetx::serial::cli_port(port).open_native_async()?;

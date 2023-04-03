@@ -27,6 +27,12 @@
  * Client = developers' computer
 **/
 
+/*
+ * Constants:
+ *
+ * Timeout: 200 ms
+**/
+
 syntax = "proto3";
 
 package edgetx.eldp;

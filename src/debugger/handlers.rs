@@ -7,7 +7,6 @@ use tokio::sync::Mutex;
 
 use super::state::State;
 
-// TODO: Rewrite using #[derive]
 pub fn cli(command: &Vec<String>, halt: &Cell<bool>, state: arcmut!(State)) {
     match command[0].as_str() {
         "c" | "continue" => {

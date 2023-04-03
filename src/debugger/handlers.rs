@@ -4,7 +4,13 @@ use crate::arcmut;
 
 use super::session::State;
 use std::sync::Arc;
+use dbg_cli_derive::Commands;
 use tokio::sync::Mutex;
+
+#[derive(Commands)]
+enum CliCommands {
+
+}
 
 // TODO: Rewrite using #[derive]
 pub fn cli(command: &Vec<String>, halt: &Cell<bool>, state: arcmut!(State)) {

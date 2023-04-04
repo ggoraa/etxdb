@@ -93,17 +93,15 @@ fn show_help(command: Option<Command>) {
             }
         });
 
-        // return Some(name);
         println!("{}", "Debugger commands:".white().bold());
-        fn format_shorthand(shorthand: Option<&str>) -> String {
-            if shorthand.is_none() { return "".to_string(); }
-
-            return format!("({})", shorthand.unwrap());
-        }
         for command in COMMAND_HANDLERS {
             println!(
                 "- {}{}  {}",
-                format_shorthand(command.shorthand),
+                if command.shorthand.is_none() {
+                    "".to_string()
+                } else {
+                    format!("({})", command.shorthand.unwrap())
+                },
                 format!("{:width$}", command.name, width = longest_str.len()).bold(),
                 command.help.italic()
             );
@@ -113,9 +111,12 @@ fn show_help(command: Option<Command>) {
     }
 }
 
+type CommandHandler =
+    fn(Vec<String>, arcmut!(State), serial_port: arcmut!(SerialStream), &Cell<bool>);
+
 struct Command<'a> {
     name: &'a str,
     shorthand: Option<&'a str>,
     help: &'a str,
-    handler: fn(Vec<String>, arcmut!(State), serial_port: arcmut!(SerialStream), &Cell<bool>),
+    handler: CommandHandler,
 }

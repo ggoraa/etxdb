@@ -21,16 +21,14 @@ pub fn list(show_all: bool) -> Result<()> {
         }
         for port in ports {
             let port_type = match port.port_type {
-                SerialPortType::UsbPort(info) => {
-                    Some(format!(
-                        "{}({})",
-                        "USB".blue().bold(),
-                        match info.product {
-                            Some(val) => val.reset(),
-                            None => String::from("unknown").yellow()
-                        }
-                    ))
-                }
+                SerialPortType::UsbPort(info) => Some(format!(
+                    "{}({})",
+                    "USB".blue().bold(),
+                    match info.product {
+                        Some(val) => val.reset(),
+                        None => String::from("unknown").yellow(),
+                    }
+                )),
                 SerialPortType::PciPort => Some(format!("{}", "PCI".green().bold())),
                 SerialPortType::BluetoothPort => Some(format!("{}", "Bluetooth".blue().bold())),
                 SerialPortType::Unknown => Some(format!("{}", "Unknown".yellow().bold())),

@@ -58,7 +58,7 @@ pub async fn start(port: String, project_src: Option<PathBuf>) -> Result<()> {
 
 pub fn init(port: String) -> Result<()> {
     let mut serial_port = edgetx::serial::cli_port(port).open()?;
-    serial_port.write(edgetx::consts::ELDP_INIT_CLI_COMMAND.as_bytes())?;
+    serial_port.write_all(edgetx::consts::ELDP_INIT_CLI_COMMAND.as_bytes())?;
     let success_msg = edgetx::consts::ELDP_INIT_SUCCESS_RESPONSE.to_owned();
     let mut buf: [u8; 30] = [0; 30];
     match serial_port.read(&mut buf) {
@@ -91,6 +91,6 @@ pub fn stop(port: String) -> Result<()> {
     buf.reserve(msg.encoded_len());
     eldp::make_request(eldp::request::Content::SwitchSerialMode(msg)).encode(&mut buf)?;
     let mut serial_port = edgetx::serial::cli_port(port).open()?;
-    serial_port.write(&buf)?;
+    serial_port.write_all(&buf)?;
     Ok(())
 }

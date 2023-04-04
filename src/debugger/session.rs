@@ -46,12 +46,14 @@ async fn cli_task(halt: &Cell<bool>, state: arcmut!(State)) {
 
         reader.read_until(b'\n', &mut buf).await.unwrap();
         let command_string = String::from_utf8(buf.clone()).unwrap();
-        let command_vec: Vec<String> = command_string
+        let mut command_vec: Vec<String> = command_string
             .split(' ')
             .map(|x| x.replace("\n", ""))
             .collect();
+        let command = command_vec[0].clone();
+        command_vec.remove(0);
 
-        cli::execute(&command_vec, halt, state.clone());
+        cli::execute(command, command_vec, halt, state.clone());
 
         buf.clear();
     }
@@ -63,11 +65,16 @@ async fn serial_port_task(
     state: arcmut!(State),
 ) {
     let mut rx_buf = Vec::<u8>::new();
+    rx_buf.resize(1, 0);
 
     while !halt.get() {
-        if let Ok(data) = timeout(
+        if timeout(
             Duration::from_millis(200),
-             serial_port.lock().await.read(&mut rx_buf)).await {
+            serial_port.lock().await.read(&mut rx_buf),
+        )
+        .await
+        .is_ok()
+        {
             // TODO: Implement serial communication
         }
         if rx_buf.is_empty() {}
@@ -77,7 +84,7 @@ async fn serial_port_task(
 async fn stop_session(serial_port: arcmut!(SerialStream)) -> Result<()> {
     let request = eldp::make_request(eldp::request::Content::StopDebug(eldp::StopDebug::default()));
     let buf = eldp::encode(request).unwrap(); // will never fail
-    serial_port.lock().await.write(&buf)?;
+    serial_port.lock().await.write_all(&buf)?;
     Ok(())
 }
 

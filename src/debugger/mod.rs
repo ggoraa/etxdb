@@ -8,10 +8,10 @@ use tokio_serial::SerialPortBuilderExt;
 use crate::edgetx;
 use crate::edgetx::eldp;
 
+pub mod cli;
 pub mod consts;
 pub mod session;
 pub mod state;
-pub mod cli;
 
 #[macro_export]
 macro_rules! arcmut {

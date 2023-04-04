@@ -13,7 +13,7 @@ use anyhow::Result;
 
 use super::cli;
 use super::state::State;
-use crate::edgetx::comm::{DevicePort, DevicePortBox};
+use crate::edgetx::comm::DevicePortBox;
 use crate::edgetx::eldp;
 use crate::{arcmut, debugger, new_arcmut};
 

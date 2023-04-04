@@ -1,7 +1,10 @@
 use std::path::PathBuf;
 
+use anyhow::anyhow;
 use anyhow::Result;
+use lazy_static::lazy_static;
 use prost::Message;
+use regex::Regex;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpSocket;
 use tokio_serial::SerialPortBuilderExt;
@@ -29,34 +32,32 @@ macro_rules! new_arcmut {
     };
 }
 
+lazy_static! {
+    static ref IP_ADDRESS_REGEX: Regex = Regex::new(r"(\d+\.\d+\.\d+\.\d+):(\d+)").unwrap();
+}
+
 #[cfg(target_family = "windows")]
-async fn get_device_port(port: String) -> Result<Box<dyn DevicePort>> {
-    // TODO: Test this on a real Windows machine
-    if port.contains("COM") {
-        // serial
-        let serial_stream = edgetx::comm::serial_port(port).open_native_async()?;
-        Ok(Box::new(serial_stream))
-    } else {
-        // TODO: Check for address validity using regex
-        // TCP socket
-        let sock = TcpSocket::new_v4()?;
-        let tcp_stream = sock.connect(port.parse().unwrap()).await?;
-        Ok(Box::new(tcp_stream))
-    }
+fn is_port_serial(port: &String) -> bool {
+    port.contains("COM")
 }
 
 #[cfg(target_family = "unix")]
+fn is_port_serial(port: &String) -> bool {
+    port.contains("/dev/tty") || port.contains("/dev/cu")
+}
+
 async fn get_device_port(port: String) -> Result<Box<dyn DevicePort>> {
-    if port.contains("/dev/tty") || port.contains("/dev/cu") {
-        // serial
+    if is_port_serial(&port) {
         let serial_stream = edgetx::comm::serial_port(port).open_native_async()?;
         Ok(Box::new(serial_stream))
-    } else {
-        // TODO: Check for address validity using regex
-        // TCP socket
+    } else if IP_ADDRESS_REGEX.is_match(port.as_str()) {
         let sock = TcpSocket::new_v4()?;
         let tcp_stream = sock.connect(port.parse().unwrap()).await?;
         Ok(Box::new(tcp_stream))
+    } else {
+        Err(anyhow!(
+            "Supplied port neither a serial port nor an IP address"
+        ))
     }
 }
 

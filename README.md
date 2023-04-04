@@ -1,5 +1,5 @@
 # etxdb
-A CLI client for the EdgeTX Lua Debugger
+A CLI client for the EdgeTX Lua Debugger, that is blazingly fast ⚡️
 
 Its command set is inspired by `lldb`, so that people that have previously worked with `lldb` can easily get started with `etxdb` without much learning.
 

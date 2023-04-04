@@ -1,3 +1,4 @@
+#![allow(unused_variables, incomplete_features)] // TODO: Remove unused_variables before a release
 use anyhow::{Error, Result};
 use clap::Parser;
 use cli::handlers;

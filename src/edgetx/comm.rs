@@ -2,7 +2,7 @@ use anyhow::Result;
 use std::time::Duration;
 use tokio_serial::{SerialPortBuilder, SerialPortInfo, SerialPortType};
 
-pub fn cli_port(port: String) -> SerialPortBuilder {
+pub fn serial_port(port: String) -> SerialPortBuilder {
     tokio_serial::new(port, 115200).timeout(Duration::from_secs(4))
 }
 

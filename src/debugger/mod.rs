@@ -28,7 +28,23 @@ macro_rules! new_arcmut {
 }
 
 pub async fn start(port: String, project_src: PathBuf) -> Result<()> {
-    let mut serial_port = edgetx::serial::cli_port(port).open_native_async()?;
+    #[cfg(target_family = "windows")]
+    let mut device_port = {
+        if port.contains("COM") { // serial
+            edgetx::comm::serial_port(port).open_native_async()?
+        } else { // TCP socket
+            todo!("TCP Socket support")
+        }
+    };
+
+    #[cfg(target_family = "unix")]
+    let mut device_port = {
+        if port.contains("/dev/tty") || port.contains("/dev/cu") { // serial
+            edgetx::comm::serial_port(port).open_native_async()?
+        } else { // TCP socket
+            todo!("TCP Socket support")
+        }
+    };
 
     // TODO: Use CLI arguments
     let msg = eldp::StartDebug {
@@ -42,9 +58,9 @@ pub async fn start(port: String, project_src: PathBuf) -> Result<()> {
     msg_buf.reserve(request.encoded_len());
     request.encode(&mut msg_buf)?;
 
-    serial_port.write_all(&msg_buf).await?;
+    device_port.write_all(&msg_buf).await?;
 
-    session::begin(serial_port, project_src).await?;
+    session::begin(device_port, project_src).await?;
 
     Ok(())
 }

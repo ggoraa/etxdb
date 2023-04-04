@@ -9,7 +9,7 @@ use crate::edgetx::eldp;
 use crate::{debugger, edgetx};
 
 pub fn list(show_all: bool) -> Result<()> {
-    let ports = edgetx::serial::available_devices(show_all)?;
+    let ports = edgetx::comm::available_devices(show_all)?;
 
     if ports.is_empty() {
         println!("{}", "No devices found.".yellow());
@@ -49,11 +49,11 @@ pub async fn start(port: String, project_src: Option<PathBuf>) -> Result<()> {
 }
 
 pub fn init(port: String) -> Result<()> {
-    let mut serial_port = edgetx::serial::cli_port(port).open()?;
-    serial_port.write_all(edgetx::consts::ELDP_INIT_CLI_COMMAND.as_bytes())?;
+    let mut device_port = edgetx::comm::serial_port(port).open()?;
+    device_port.write_all(edgetx::consts::ELDP_INIT_CLI_COMMAND.as_bytes())?;
     let success_msg = edgetx::consts::ELDP_INIT_SUCCESS_RESPONSE.to_owned();
     let mut buf: [u8; 30] = [0; 30];
-    if let Err(err) = serial_port.read(&mut buf) {
+    if let Err(err) = device_port.read(&mut buf) {
         return Err(anyhow!(
             "Failed to init debug connection ({}), maybe it's already initialised?",
             err
@@ -80,7 +80,7 @@ pub fn stop(port: String) -> Result<()> {
     let mut buf: Vec<u8> = Vec::new();
     buf.reserve(msg.encoded_len());
     eldp::make_request(eldp::request::Content::SwitchSerialMode(msg)).encode(&mut buf)?;
-    let mut serial_port = edgetx::serial::cli_port(port).open()?;
-    serial_port.write_all(&buf)?;
+    let mut device_port = edgetx::comm::serial_port(port).open()?;
+    device_port.write_all(&buf)?;
     Ok(())
 }

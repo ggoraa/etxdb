@@ -4,11 +4,10 @@ use std::time::Duration;
 use std::{cell::Cell, path::PathBuf};
 
 use crossterm::style::Stylize;
-use tokio::io;
+use tokio::io::{self, AsyncRead, AsyncWrite, AsyncWriteExt};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 use tokio::sync::Mutex;
 use tokio::time::timeout;
-use tokio_serial::SerialStream;
 
 use anyhow::Result;
 
@@ -17,7 +16,10 @@ use super::state::State;
 use crate::edgetx::eldp;
 use crate::{arcmut, debugger, new_arcmut};
 
-pub async fn begin(mut serial_port: SerialStream, src: PathBuf) -> Result<()> {
+pub async fn begin<T: AsyncRead + AsyncWrite + Unpin>(
+    mut device_port: T,
+    src: PathBuf,
+) -> Result<()> {
     let halt = Cell::new(false);
 
     let mut state = State { proj_root: src };
@@ -25,19 +27,23 @@ pub async fn begin(mut serial_port: SerialStream, src: PathBuf) -> Result<()> {
     // all of this is so that they can be safely accessed
     // between tasks
     let state = new_arcmut!(state);
-    let serial_port = new_arcmut!(serial_port);
+    let device_port = new_arcmut!(device_port);
 
     tokio::join!(
-        cli_task(&halt, state.clone(), serial_port.clone()),
-        serial_port_task(&halt, serial_port.clone(), state.clone())
+        cli_task(&halt, state.clone(), device_port.clone()),
+        device_port_task(&halt, device_port.clone(), state.clone())
     );
 
     // on exit (basically halt set to true)
-    stop_session(serial_port.clone()).await?;
+    stop_session(device_port.clone()).await?;
     Ok(())
 }
 
-async fn cli_task(halt: &Cell<bool>, state: arcmut!(State), serial_port: arcmut!(SerialStream)) {
+async fn cli_task<T: AsyncRead + AsyncWrite + Unpin>(
+    halt: &Cell<bool>,
+    state: arcmut!(State),
+    device_port: arcmut!(T),
+) {
     let mut reader = io::BufReader::new(io::stdin());
     let mut buf = Vec::new();
 
@@ -58,16 +64,17 @@ async fn cli_task(halt: &Cell<bool>, state: arcmut!(State), serial_port: arcmut!
             command_vec,
             halt,
             state.clone(),
-            serial_port.clone(),
-        );
+            device_port.clone(),
+        )
+        .await;
 
         buf.clear();
     }
 }
 
-async fn serial_port_task(
+async fn device_port_task<T: AsyncRead + AsyncWrite + Unpin>(
     halt: &Cell<bool>,
-    serial_port: arcmut!(SerialStream),
+    device_port: arcmut!(T),
     state: arcmut!(State),
 ) {
     let mut rx_buf = Vec::<u8>::new();
@@ -76,7 +83,7 @@ async fn serial_port_task(
     while !halt.get() {
         if timeout(
             Duration::from_millis(200),
-            serial_port.lock().await.read(&mut rx_buf),
+            device_port.lock().await.read(&mut rx_buf),
         )
         .await
         .is_ok()
@@ -87,10 +94,10 @@ async fn serial_port_task(
     }
 }
 
-async fn stop_session(serial_port: arcmut!(SerialStream)) -> Result<()> {
+async fn stop_session<T: AsyncRead + AsyncWrite + Unpin>(device_port: arcmut!(T)) -> Result<()> {
     let request = eldp::make_request(eldp::request::Content::StopDebug(eldp::StopDebug::default()));
     let buf = eldp::encode(request).unwrap(); // will never fail
-    serial_port.lock().await.write_all(&buf)?;
+    device_port.lock().await.write_all(&buf).await?;
     Ok(())
 }
 

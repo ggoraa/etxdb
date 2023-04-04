@@ -114,6 +114,7 @@ message Request {
         GetBreakpoints getBreakpoints = 5;
         SwitchSerialMode switchSerialMode = 6;
         StopDebug stopDebug = 7;
+        GetSystemInfo getSystemInfo = 8;
     }
 }
 
@@ -122,6 +123,7 @@ message Response {
     oneof content {
         DebugStatus debugStatus = 1;
         Breakpoints breakpoints = 2;
+        SystemInfo systemInfo = 3;
     };
 }
 
@@ -156,15 +158,15 @@ message StartDebug {
 }
 
 // client to host
-message StopDebug { }
-
-// client to host
 message GetBreakpoints {
     // If a filename is present, returned message will only
     // contain breakpoints for that filename. If not, then 
     // all breakpoints will be returned.
     optional string filename = 1;
 }
+
+// client to host
+message GetSystemInfo {}
 
 // client to host
 message SwitchSerialMode {
@@ -183,6 +185,14 @@ message SwitchSerialMode {
 message DebugStatus {
     optional DebuggerState state = 1;
     optional Breakpoint stoppedAtBreakpoint = 2;
+}
+
+// host to client
+message SystemInfo {
+    optional string osName = 1;
+    optional Version version = 2;
+    optional fixed32 batteryVoltage = 3;
+    optional int32 localTime = 4;
 }
 
 // host to client

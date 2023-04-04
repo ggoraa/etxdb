@@ -6,7 +6,10 @@ use super::state::State;
 use crossterm::style::Stylize;
 use lazy_static::lazy_static;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::{
+    io::{AsyncRead, AsyncWrite},
+    sync::Mutex,
+};
 use tokio_serial::SerialStream;
 
 pub mod handlers;
@@ -16,70 +19,69 @@ const COMMAND_HANDLERS: [Command; 4] = [
         name: "continue",
         shorthand: Some("c"),
         help: "continue command help text", // TODO: Fill
-        handler: handlers::continue_command,
     },
     Command {
         name: "breakpoint",
         shorthand: Some("b"),
         help: "breakpoint command help text", // TODO: Fill
-        handler: handlers::breakpoint_command,
     },
     Command {
         name: "print",
         shorthand: Some("p"),
         help: "print command help text", // TODO: Fill
-        handler: handlers::print_command,
     },
     Command {
         name: "quit",
         shorthand: Some("q"),
         help: "Stops current debugging session and exits etxdb.", // TODO: Fill
-        handler: handlers::quit_command,
     },
 ];
 
-fn valid_commands() -> Vec<&'static str> {
-    COMMAND_HANDLERS
-        .into_iter()
-        .flat_map(|command| {
-            let mut vec = vec![command.name];
-            if command.shorthand.is_some() {
-                vec.push(command.shorthand.unwrap());
-            }
-            vec
-        })
-        .collect()
-}
-
 lazy_static! {
-    static ref VALID_COMMANDS: Vec<&'static str> = valid_commands();
+    static ref VALID_COMMANDS: Vec<&'static str> = {
+        COMMAND_HANDLERS
+            .into_iter()
+            .flat_map(|command| {
+                let mut vec = vec![command.name];
+                if command.shorthand.is_some() {
+                    vec.push(command.shorthand.unwrap());
+                }
+                vec
+            })
+            .collect()
+    };
 }
 
-pub fn execute(
+pub async fn execute<T: AsyncRead + AsyncWrite + Unpin>(
     command: String,
     args: Vec<String>,
     halt: &Cell<bool>,
     state: arcmut!(State),
-    serial_port: arcmut!(SerialStream),
+    device_port: arcmut!(T),
 ) {
-    match command.as_str() {
-        "h" | "help" => {
-            show_help(None);
-        }
+    #![allow(clippy::unit_arg)]
+    let result = match command.as_str() {
+        "h" | "help" => Ok(show_help(None)),
+        "c" | "continue" => handlers::continue_command(device_port).await,
+        "b" | "breakpoint" => handlers::breakpoint_command(args, state, device_port),
+        "p" | "print" => handlers::print_command(args, state),
+        "q" | "quit" => Ok(handlers::quit_command(state, device_port, halt)),
         _ => {
-            if let Some(handler) = COMMAND_HANDLERS
-                .into_iter()
-                .find(|handler| handler.name == command || handler.shorthand == Some(&command))
-            {
-                (handler.handler)(args, state.clone(), serial_port.clone(), halt);
-            } else {
-                println!(
-                    "{} {}.",
-                    "Unknown command".yellow(),
-                    command.yellow().italic()
-                );
-            }
+            println!(
+                "{} {}.",
+                "Unknown command".yellow(),
+                command.clone().yellow().italic()
+            );
+            Ok(())
         }
+    };
+
+    if let Err(err) = result {
+        println!(
+            "{} {}",
+            format!("Error in {}:", command.italic()).red().bold(),
+            err.to_string().red().italic()
+        );
     }
 }
 
@@ -111,12 +113,8 @@ fn show_help(command: Option<Command>) {
     }
 }
 
-type CommandHandler =
-    fn(Vec<String>, arcmut!(State), serial_port: arcmut!(SerialStream), &Cell<bool>);
-
 struct Command<'a> {
     name: &'a str,
     shorthand: Option<&'a str>,
     help: &'a str,
-    handler: CommandHandler,
 }

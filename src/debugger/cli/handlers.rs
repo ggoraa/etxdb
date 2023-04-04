@@ -1,40 +1,43 @@
-use crate::{arcmut, debugger::state::State};
+use crate::{arcmut, debugger::state::State, edgetx::eldp};
+use anyhow::Result;
 use inquire::Select;
 use std::{cell::Cell, sync::Arc};
-use tokio::sync::Mutex;
-use tokio_serial::SerialStream;
+use tokio::{
+    io::{AsyncRead, AsyncWrite, AsyncWriteExt},
+    sync::Mutex,
+};
 
-pub fn continue_command(
-    _: Vec<String>,
-    state: arcmut!(State),
-    _: arcmut!(SerialStream),
-    _: &Cell<bool>,
-) {
+pub async fn continue_command<T: AsyncRead + AsyncWrite + Unpin>(
+    device_port: arcmut!(T),
+) -> Result<()> {
+    let msg = eldp::ExecuteDebuggerCommand {
+        command: Some(eldp::Command::Continue.into()),
+    };
+    let request = eldp::make_request(eldp::request::Content::ExecuteDebuggerCommand(msg));
+    let data = eldp::encode(request)?;
+    let mut device_port = device_port.lock().await;
+    device_port.write_all(&data).await?;
     println!("continue");
+    Ok(())
 }
 
-pub fn breakpoint_command(
+pub fn breakpoint_command<T: AsyncRead + AsyncWrite>(
     args: Vec<String>,
     state: arcmut!(State),
-    _: arcmut!(SerialStream),
-    _: &Cell<bool>,
-) {
+    device_port: arcmut!(T),
+) -> Result<()> {
     println!("breakpoint");
+    Ok(())
 }
 
-pub fn print_command(
-    args: Vec<String>,
-    state: arcmut!(State),
-    _: arcmut!(SerialStream),
-    _: &Cell<bool>,
-) {
+pub fn print_command(args: Vec<String>, state: arcmut!(State)) -> Result<()> {
     println!("print");
+    Ok(())
 }
 
-pub fn quit_command(
-    _: Vec<String>,
+pub fn quit_command<T: AsyncRead + AsyncWrite>(
     state: arcmut!(State),
-    _: arcmut!(SerialStream),
+    device_port: arcmut!(T),
     halt: &Cell<bool>,
 ) {
     const YES_CHOICE: &str = "Yes, stop and quit";

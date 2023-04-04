@@ -11,7 +11,7 @@ use tokio::{
     sync::Mutex,
 };
 
-pub mod handlers;
+pub mod commands;
 
 const COMMAND_HANDLERS: [Command; 4] = [
     Command {
@@ -61,10 +61,10 @@ pub async fn execute<T: AsyncRead + AsyncWrite + Unpin>(
     #![allow(clippy::unit_arg)]
     let result = match command.as_str() {
         "h" | "help" => Ok(show_help(None)),
-        "c" | "continue" => handlers::continue_command(device_port).await,
-        "b" | "breakpoint" => handlers::breakpoint_command(args, state, device_port),
-        "p" | "print" => handlers::print_command(args, state),
-        "q" | "quit" => Ok(handlers::quit_command(state, device_port, halt)),
+        "c" | "continue" => commands::continue_command(device_port).await,
+        "b" | "breakpoint" => commands::breakpoint_command(args, state, device_port),
+        "p" | "print" => commands::print_command(args, state),
+        "q" | "quit" => Ok(commands::quit_command(state, device_port, halt)),
         _ => {
             println!(
                 "{} {}.",

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::{cell::Cell, path::PathBuf};
 
-use colored::Colorize;
+use crossterm::style::Stylize;
 use tokio::io;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 use tokio::sync::Mutex;
@@ -20,7 +20,7 @@ use crate::{arcmut, debugger, new_arcmut};
 pub async fn begin(mut serial_port: SerialStream, src: PathBuf) -> Result<()> {
     let halt = Cell::new(false);
 
-    let mut state = State::default();
+    let mut state = State { proj_root: src };
 
     // all of this is so that they can be safely accessed
     // between tasks
@@ -28,7 +28,7 @@ pub async fn begin(mut serial_port: SerialStream, src: PathBuf) -> Result<()> {
     let serial_port = new_arcmut!(serial_port);
 
     tokio::join!(
-        cli_task(&halt, state.clone()),
+        cli_task(&halt, state.clone(), serial_port.clone()),
         serial_port_task(&halt, serial_port.clone(), state.clone())
     );
 
@@ -37,7 +37,7 @@ pub async fn begin(mut serial_port: SerialStream, src: PathBuf) -> Result<()> {
     Ok(())
 }
 
-async fn cli_task(halt: &Cell<bool>, state: arcmut!(State)) {
+async fn cli_task(halt: &Cell<bool>, state: arcmut!(State), serial_port: arcmut!(SerialStream)) {
     let mut reader = io::BufReader::new(io::stdin());
     let mut buf = Vec::new();
 
@@ -53,7 +53,13 @@ async fn cli_task(halt: &Cell<bool>, state: arcmut!(State)) {
         let command = command_vec[0].clone();
         command_vec.remove(0);
 
-        cli::execute(command, command_vec, halt, state.clone());
+        cli::execute(
+            command,
+            command_vec,
+            halt,
+            state.clone(),
+            serial_port.clone(),
+        );
 
         buf.clear();
     }

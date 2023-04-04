@@ -1,22 +1,22 @@
 use crate::{arcmut, debugger::state::State};
 use std::{sync::Arc, cell::Cell};
-use colored::Colorize;
 use inquire::Select;
 use tokio::sync::Mutex;
+use tokio_serial::SerialStream;
 
-pub fn continue_command(_: Vec<String>, state: arcmut!(State), _: &Cell<bool>) {
+pub fn continue_command(_: Vec<String>, state: arcmut!(State), _: arcmut!(SerialStream), _: &Cell<bool>) {
     println!("continue");
 }
 
-pub fn breakpoint_command(args: Vec<String>, state: arcmut!(State), _: &Cell<bool>) {
+pub fn breakpoint_command(args: Vec<String>, state: arcmut!(State), _: arcmut!(SerialStream), _: &Cell<bool>) {
     println!("breakpoint");
 }
 
-pub fn print_command(args: Vec<String>, state: arcmut!(State), _: &Cell<bool>) {
+pub fn print_command(args: Vec<String>, state: arcmut!(State), _: arcmut!(SerialStream), _: &Cell<bool>) {
     println!("print");
 }
 
-pub fn quit_command(_: Vec<String>, state: arcmut!(State), halt: &Cell<bool>) {
+pub fn quit_command(_: Vec<String>, state: arcmut!(State), _: arcmut!(SerialStream), halt: &Cell<bool>) {
     const YES_CHOICE: &str = "Yes, stop and quit";
     const NO_CHOICE: &str = "No, abort!";
     let answer = Select::new(
@@ -25,12 +25,7 @@ pub fn quit_command(_: Vec<String>, state: arcmut!(State), halt: &Cell<bool>) {
     )
     .prompt();
 
-    match answer {
-        Ok(choice) => if choice == YES_CHOICE { halt.set(true) },
-        Err(_) => println!("{}", "An error occured. Abort.".red().bold()),
+    if answer.unwrap() == YES_CHOICE {
+        halt.set(true);
     }
-}
-
-pub fn help_command(_: Vec<String>, state: arcmut!(State), halt: &Cell<bool>) {
-    println!("Help not yet here");
 }

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
-use colored::{ColoredString, Colorize};
+use crossterm::style::Stylize;
 use prost::Message;
 use tokio_serial::SerialPortType;
 
@@ -24,21 +24,16 @@ pub fn list(show_all: bool) -> Result<()> {
                 SerialPortType::UsbPort(info) => {
                     Some(format!(
                         "{}({})",
-                        "USB".bright_blue().bold(),
-                        if info.product.is_none() {
-                            "unknown".yellow()
-                        } else {
-                            ColoredString::from(info.product.unwrap().as_str())
+                        "USB".blue().bold(),
+                        match info.product {
+                            Some(val) => val.reset(),
+                            None => String::from("unknown").yellow()
                         }
                     ))
                 }
                 SerialPortType::PciPort => Some(format!("{}", "PCI".green().bold())),
-                SerialPortType::BluetoothPort => {
-                    Some(format!("{}", "Bluetooth".blue().bold()))
-                }
-                SerialPortType::Unknown => {
-                    Some(format!("{}", "Unknown".yellow().bold()))
-                }
+                SerialPortType::BluetoothPort => Some(format!("{}", "Bluetooth".blue().bold())),
+                SerialPortType::Unknown => Some(format!("{}", "Unknown".yellow().bold())),
             };
             println!(
                 "- {}: {}",

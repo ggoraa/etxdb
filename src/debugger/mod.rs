@@ -2,11 +2,12 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use prost::Message;
-use tokio::io::{AsyncWriteExt, AsyncRead, AsyncWrite};
+use tokio::io::AsyncWriteExt;
 use tokio::net::TcpSocket;
 use tokio_serial::SerialPortBuilderExt;
 
 use crate::edgetx;
+use crate::edgetx::comm::DevicePort;
 use crate::edgetx::eldp;
 
 pub mod cli;
@@ -28,16 +29,16 @@ macro_rules! new_arcmut {
     };
 }
 
-trait DevicePort: AsyncRead + AsyncWrite + Unpin {}
-impl<T: AsyncRead + AsyncWrite + Unpin> DevicePort for T {}
-
 #[cfg(target_family = "windows")]
 async fn get_device_port(port: String) -> Result<Box<dyn DevicePort>> {
     // TODO: Test this on a real Windows machine
-    if port.contains("COM") { // serial
+    if port.contains("COM") {
+        // serial
         let serial_stream = edgetx::comm::serial_port(port).open_native_async()?;
         Ok(Box::new(serial_stream))
-    } else { // TCP socket
+    } else {
+        // TODO: Check for address validity using regex
+        // TCP socket
         let sock = TcpSocket::new_v4()?;
         let tcp_stream = sock.connect(port.parse().unwrap()).await?;
         Ok(Box::new(tcp_stream))
@@ -46,10 +47,13 @@ async fn get_device_port(port: String) -> Result<Box<dyn DevicePort>> {
 
 #[cfg(target_family = "unix")]
 async fn get_device_port(port: String) -> Result<Box<dyn DevicePort>> {
-    if port.contains("/dev/tty") || port.contains("/dev/cu") { // serial
+    if port.contains("/dev/tty") || port.contains("/dev/cu") {
+        // serial
         let serial_stream = edgetx::comm::serial_port(port).open_native_async()?;
         Ok(Box::new(serial_stream))
-    } else { // TCP socket
+    } else {
+        // TODO: Check for address validity using regex
+        // TCP socket
         let sock = TcpSocket::new_v4()?;
         let tcp_stream = sock.connect(port.parse().unwrap()).await?;
         Ok(Box::new(tcp_stream))

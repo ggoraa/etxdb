@@ -1,15 +1,14 @@
-use crate::{arcmut, debugger::state::State, edgetx::eldp};
+use crate::{
+    arcmut,
+    debugger::state::State,
+    edgetx::{comm::DevicePortBox, eldp},
+};
 use anyhow::Result;
 use inquire::Select;
 use std::{cell::Cell, sync::Arc};
-use tokio::{
-    io::{AsyncRead, AsyncWrite, AsyncWriteExt},
-    sync::Mutex,
-};
+use tokio::{io::AsyncWriteExt, sync::Mutex};
 
-pub async fn continue_command<T: AsyncRead + AsyncWrite + Unpin>(
-    device_port: arcmut!(T),
-) -> Result<()> {
+pub async fn continue_command(device_port: arcmut!(DevicePortBox)) -> Result<()> {
     let msg = eldp::ExecuteDebuggerCommand {
         command: Some(eldp::Command::Continue.into()),
     };
@@ -21,10 +20,10 @@ pub async fn continue_command<T: AsyncRead + AsyncWrite + Unpin>(
     Ok(())
 }
 
-pub fn breakpoint_command<T: AsyncRead + AsyncWrite>(
+pub fn breakpoint_command(
     args: Vec<String>,
     state: arcmut!(State),
-    device_port: arcmut!(T),
+    device_port: arcmut!(DevicePortBox),
 ) -> Result<()> {
     println!("breakpoint");
     Ok(())
@@ -35,11 +34,7 @@ pub fn print_command(args: Vec<String>, state: arcmut!(State)) -> Result<()> {
     Ok(())
 }
 
-pub fn quit_command<T: AsyncRead + AsyncWrite>(
-    state: arcmut!(State),
-    device_port: arcmut!(T),
-    halt: &Cell<bool>,
-) {
+pub fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePortBox), halt: &Cell<bool>) {
     const YES_CHOICE: &str = "Yes, stop and quit";
     const NO_CHOICE: &str = "No, abort!";
     let answer = Select::new(

@@ -4,7 +4,7 @@ use std::time::Duration;
 use std::{cell::Cell, path::PathBuf};
 
 use crossterm::style::Stylize;
-use tokio::io::{self, AsyncRead, AsyncWrite, AsyncWriteExt};
+use tokio::io::{self, AsyncWriteExt};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 use tokio::sync::Mutex;
 use tokio::time::timeout;
@@ -13,13 +13,11 @@ use anyhow::Result;
 
 use super::cli;
 use super::state::State;
+use crate::edgetx::comm::{DevicePort, DevicePortBox};
 use crate::edgetx::eldp;
 use crate::{arcmut, debugger, new_arcmut};
 
-pub async fn begin<T: AsyncRead + AsyncWrite + Unpin>(
-    mut device_port: T,
-    src: PathBuf,
-) -> Result<()> {
+pub async fn begin(mut device_port: DevicePortBox, src: PathBuf) -> Result<()> {
     let halt = Cell::new(false);
 
     let mut state = State { proj_root: src };
@@ -39,11 +37,7 @@ pub async fn begin<T: AsyncRead + AsyncWrite + Unpin>(
     Ok(())
 }
 
-async fn cli_task<T: AsyncRead + AsyncWrite + Unpin>(
-    halt: &Cell<bool>,
-    state: arcmut!(State),
-    device_port: arcmut!(T),
-) {
+async fn cli_task(halt: &Cell<bool>, state: arcmut!(State), device_port: arcmut!(DevicePortBox)) {
     let mut reader = io::BufReader::new(io::stdin());
     let mut buf = Vec::new();
 
@@ -72,9 +66,9 @@ async fn cli_task<T: AsyncRead + AsyncWrite + Unpin>(
     }
 }
 
-async fn device_port_task<T: AsyncRead + AsyncWrite + Unpin>(
+async fn device_port_task(
     halt: &Cell<bool>,
-    device_port: arcmut!(T),
+    device_port: arcmut!(DevicePortBox),
     state: arcmut!(State),
 ) {
     let mut rx_buf = Vec::<u8>::new();
@@ -94,10 +88,12 @@ async fn device_port_task<T: AsyncRead + AsyncWrite + Unpin>(
     }
 }
 
-async fn stop_session<T: AsyncRead + AsyncWrite + Unpin>(device_port: arcmut!(T)) -> Result<()> {
-    let request = eldp::make_request(eldp::request::Content::ExecuteDebuggerCommand(eldp::ExecuteDebuggerCommand {
-        command: Some(eldp::Command::Stop.into())
-    }));
+async fn stop_session(device_port: arcmut!(DevicePortBox)) -> Result<()> {
+    let request = eldp::make_request(eldp::request::Content::ExecuteDebuggerCommand(
+        eldp::ExecuteDebuggerCommand {
+            command: Some(eldp::Command::Stop.into()),
+        },
+    ));
     let buf = eldp::encode(request).unwrap(); // will never fail
     device_port.lock().await.write_all(&buf).await?;
     Ok(())

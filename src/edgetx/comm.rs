@@ -1,6 +1,12 @@
 use anyhow::Result;
 use std::time::Duration;
+use tokio::io::{AsyncRead, AsyncWrite};
 use tokio_serial::{SerialPortBuilder, SerialPortInfo, SerialPortType};
+
+pub trait DevicePort: AsyncRead + AsyncWrite + Unpin {}
+impl<T: AsyncRead + AsyncWrite + Unpin> DevicePort for T {}
+
+pub type DevicePortBox = Box<dyn DevicePort>;
 
 pub fn serial_port(port: String) -> SerialPortBuilder {
     tokio_serial::new(port, 115200).timeout(Duration::from_secs(4))

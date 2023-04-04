@@ -1,15 +1,12 @@
 use std::cell::Cell;
 
-use crate::arcmut;
+use crate::{arcmut, edgetx::comm::DevicePortBox};
 
 use super::state::State;
 use crossterm::style::Stylize;
 use lazy_static::lazy_static;
 use std::sync::Arc;
-use tokio::{
-    io::{AsyncRead, AsyncWrite},
-    sync::Mutex,
-};
+use tokio::sync::Mutex;
 
 pub mod commands;
 
@@ -51,12 +48,12 @@ lazy_static! {
     };
 }
 
-pub async fn execute<T: AsyncRead + AsyncWrite + Unpin>(
+pub async fn execute(
     command: String,
     args: Vec<String>,
     halt: &Cell<bool>,
     state: arcmut!(State),
-    device_port: arcmut!(T),
+    device_port: arcmut!(DevicePortBox),
 ) {
     #![allow(clippy::unit_arg)]
     let result = match command.as_str() {

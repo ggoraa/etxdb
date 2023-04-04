@@ -26,10 +26,7 @@ pub fn quit_command(_: Vec<String>, state: arcmut!(State), halt: &Cell<bool>) {
     .prompt();
 
     match answer {
-        Ok(choice) => match choice {
-            YES_CHOICE => halt.set(true),
-            _ => {}
-        },
+        Ok(choice) => if choice == YES_CHOICE { halt.set(true) },
         Err(_) => println!("{}", "An error occured. Abort.".red().bold()),
     }
 }

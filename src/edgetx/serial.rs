@@ -3,7 +3,7 @@ use std::time::Duration;
 use tokio_serial::{SerialPortBuilder, SerialPortInfo, SerialPortType};
 
 pub fn cli_port(port: String) -> SerialPortBuilder {
-    return tokio_serial::new(port, 115200).timeout(Duration::from_secs(4));
+    tokio_serial::new(port, 115200).timeout(Duration::from_secs(4))
 }
 
 pub fn available_devices(show_all: bool) -> Result<Vec<SerialPortInfo>> {
@@ -11,10 +11,7 @@ pub fn available_devices(show_all: bool) -> Result<Vec<SerialPortInfo>> {
         .into_iter()
         .filter(|port| {
             if !show_all {
-                match port.port_type {
-                    SerialPortType::UsbPort(_) => true,
-                    _ => false,
-                }
+                matches!(port.port_type, SerialPortType::UsbPort(_))
             } else {
                 true
             }

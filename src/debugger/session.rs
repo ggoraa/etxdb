@@ -48,7 +48,7 @@ async fn cli_task(halt: &Cell<bool>, state: arcmut!(State)) {
         let command_string = String::from_utf8(buf.clone()).unwrap();
         let mut command_vec: Vec<String> = command_string
             .split(' ')
-            .map(|x| x.replace("\n", ""))
+            .map(|x| x.replace('\n', ""))
             .collect();
         let command = command_vec[0].clone();
         command_vec.remove(0);

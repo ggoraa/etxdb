@@ -20,27 +20,26 @@ pub fn list(show_all: bool) -> Result<()> {
             println!("{}", "Connected USB devices:".white().bold());
         }
         for port in ports {
-            let port_type: Option<String>;
-            match port.port_type {
+            let port_type = match port.port_type {
                 SerialPortType::UsbPort(info) => {
-                    port_type = Some(format!(
+                    Some(format!(
                         "{}({})",
                         "USB".bright_blue().bold(),
-                        if info.product == None {
+                        if info.product.is_none() {
                             "unknown".yellow()
                         } else {
                             ColoredString::from(info.product.unwrap().as_str())
                         }
                     ))
                 }
-                SerialPortType::PciPort => port_type = Some(format!("{}", "PCI".green().bold())),
+                SerialPortType::PciPort => Some(format!("{}", "PCI".green().bold())),
                 SerialPortType::BluetoothPort => {
-                    port_type = Some(format!("{}", "Bluetooth".blue().bold()))
+                    Some(format!("{}", "Bluetooth".blue().bold()))
                 }
                 SerialPortType::Unknown => {
-                    port_type = Some(format!("{}", "Unknown".yellow().bold()))
+                    Some(format!("{}", "Unknown".yellow().bold()))
                 }
-            }
+            };
             println!(
                 "- {}: {}",
                 port_type.unwrap(),
@@ -61,32 +60,30 @@ pub fn init(port: String) -> Result<()> {
     serial_port.write_all(edgetx::consts::ELDP_INIT_CLI_COMMAND.as_bytes())?;
     let success_msg = edgetx::consts::ELDP_INIT_SUCCESS_RESPONSE.to_owned();
     let mut buf: [u8; 30] = [0; 30];
-    match serial_port.read(&mut buf) {
-        Err(err) => {
-            return Err(anyhow!(
-                "Failed to init debug connection ({}), maybe it's already initialised?",
-                err
-            ))
-        }
-        _ => {}
+    if let Err(err) = serial_port.read(&mut buf) {
+        return Err(anyhow!(
+            "Failed to init debug connection ({}), maybe it's already initialised?",
+            err
+        ));
     }
 
     let response = String::from_utf8(buf.to_vec())?;
 
     if response.contains(&success_msg) {
-        return Ok(());
+        Ok(())
     } else {
-        return Err(anyhow!(
+        Err(anyhow!(
             "Failed to init debug connection, received response \"{}\", expected \"{}\"",
             response,
             success_msg
-        ));
+        ))
     }
 }
 
 pub fn stop(port: String) -> Result<()> {
-    let mut msg = eldp::SwitchSerialMode::default();
-    msg.mode = Some(eldp::switch_serial_mode::Mode::Cli.into());
+    let msg = eldp::SwitchSerialMode {
+        mode: Some(eldp::switch_serial_mode::Mode::Cli.into()),
+    };
     let mut buf: Vec<u8> = Vec::new();
     buf.reserve(msg.encoded_len());
     eldp::make_request(eldp::request::Content::SwitchSerialMode(msg)).encode(&mut buf)?;

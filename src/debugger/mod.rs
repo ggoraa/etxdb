@@ -31,9 +31,11 @@ pub async fn start(port: String, project_src: PathBuf) -> Result<()> {
     let mut serial_port = edgetx::serial::cli_port(port).open_native_async()?;
 
     // TODO: Use CLI arguments
-    let mut msg = eldp::StartDebug::default();
-    msg.target_type = Some(eldp::DebugTarget::Script.into());
-    msg.target_name = Some("file.lua".to_owned());
+    let msg = eldp::StartDebug {
+        target_type: Some(eldp::DebugTarget::Script.into()),
+        target_name: Some("file.lua".to_owned()),
+        ..Default::default()
+    };
     let request = eldp::make_request(eldp::request::Content::StartDebug(msg));
 
     let mut msg_buf = Vec::<u8>::new();

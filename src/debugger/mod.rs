@@ -2,7 +2,8 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use prost::Message;
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncWriteExt, AsyncRead, AsyncWrite};
+use tokio::net::TcpSocket;
 use tokio_serial::SerialPortBuilderExt;
 
 use crate::edgetx;
@@ -27,24 +28,36 @@ macro_rules! new_arcmut {
     };
 }
 
-pub async fn start(port: String, project_src: PathBuf) -> Result<()> {
-    #[cfg(target_family = "windows")]
-    let mut device_port = {
-        if port.contains("COM") { // serial
-            edgetx::comm::serial_port(port).open_native_async()?
-        } else { // TCP socket
-            todo!("TCP Socket support")
-        }
-    };
+trait DevicePort: AsyncRead + AsyncWrite + Unpin {}
+impl<T: AsyncRead + AsyncWrite + Unpin> DevicePort for T {}
 
-    #[cfg(target_family = "unix")]
-    let mut device_port = {
-        if port.contains("/dev/tty") || port.contains("/dev/cu") { // serial
-            edgetx::comm::serial_port(port).open_native_async()?
-        } else { // TCP socket
-            todo!("TCP Socket support")
-        }
-    };
+#[cfg(target_family = "windows")]
+async fn get_device_port(port: String) -> Result<Box<dyn DevicePort>> {
+    // TODO: Test this on a real Windows machine
+    if port.contains("COM") { // serial
+        let serial_stream = edgetx::comm::serial_port(port).open_native_async()?;
+        Ok(Box::new(serial_stream))
+    } else { // TCP socket
+        let sock = TcpSocket::new_v4()?;
+        let tcp_stream = sock.connect(port.parse().unwrap()).await?;
+        Ok(Box::new(tcp_stream))
+    }
+}
+
+#[cfg(target_family = "unix")]
+async fn get_device_port(port: String) -> Result<Box<dyn DevicePort>> {
+    if port.contains("/dev/tty") || port.contains("/dev/cu") { // serial
+        let serial_stream = edgetx::comm::serial_port(port).open_native_async()?;
+        Ok(Box::new(serial_stream))
+    } else { // TCP socket
+        let sock = TcpSocket::new_v4()?;
+        let tcp_stream = sock.connect(port.parse().unwrap()).await?;
+        Ok(Box::new(tcp_stream))
+    }
+}
+
+pub async fn start(port: String, project_src: PathBuf) -> Result<()> {
+    let mut device_port = get_device_port(port).await?;
 
     // TODO: Use CLI arguments
     let msg = eldp::StartDebug {

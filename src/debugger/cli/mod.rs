@@ -10,7 +10,6 @@ use tokio::{
     io::{AsyncRead, AsyncWrite},
     sync::Mutex,
 };
-use tokio_serial::SerialStream;
 
 pub mod handlers;
 

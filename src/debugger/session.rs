@@ -95,7 +95,9 @@ async fn device_port_task<T: AsyncRead + AsyncWrite + Unpin>(
 }
 
 async fn stop_session<T: AsyncRead + AsyncWrite + Unpin>(device_port: arcmut!(T)) -> Result<()> {
-    let request = eldp::make_request(eldp::request::Content::StopDebug(eldp::StopDebug::default()));
+    let request = eldp::make_request(eldp::request::Content::ExecuteDebuggerCommand(eldp::ExecuteDebuggerCommand {
+        command: Some(eldp::Command::Stop.into())
+    }));
     let buf = eldp::encode(request).unwrap(); // will never fail
     device_port.lock().await.write_all(&buf).await?;
     Ok(())

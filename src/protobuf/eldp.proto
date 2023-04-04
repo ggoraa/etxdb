@@ -113,8 +113,7 @@ message Request {
         StartDebug startDebug = 4;
         GetBreakpoints getBreakpoints = 5;
         SwitchSerialMode switchSerialMode = 6;
-        StopDebug stopDebug = 7;
-        GetSystemInfo getSystemInfo = 8;
+        GetSystemInfo getSystemInfo = 7;
     }
 }
 

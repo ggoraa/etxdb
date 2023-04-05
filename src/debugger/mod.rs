@@ -56,7 +56,7 @@ async fn get_device_port(port: String) -> Result<Box<dyn DevicePort>> {
         Ok(Box::new(tcp_stream))
     } else {
         Err(anyhow!(
-            "Supplied port neither a serial port nor an IP address"
+            "Supplied port is neither a serial port nor an IP address"
         ))
     }
 }

@@ -56,7 +56,9 @@ pub async fn execute(
     device_port: arcmut!(DevicePortBox),
 ) {
     #![allow(clippy::unit_arg)]
-    let result = match command.as_str() {
+    let command_str = command.replace('\r', "");
+    let command_str = command_str.as_str();
+    let result = match command_str {
         "h" | "help" => Ok(show_help(None)),
         "c" | "continue" => commands::continue_command(device_port).await,
         "b" | "breakpoint" => commands::breakpoint_command(args, state, device_port),

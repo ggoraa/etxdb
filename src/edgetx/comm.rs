@@ -9,7 +9,7 @@ impl<T: AsyncRead + AsyncWrite + Unpin> DevicePort for T {}
 pub type DevicePortBox = Box<dyn DevicePort>;
 
 pub fn serial_port(port: String) -> SerialPortBuilder {
-    tokio_serial::new(port, 115200).timeout(Duration::from_secs(4))
+    tokio_serial::new(port, 115200).timeout(Duration::from_secs(5))
 }
 
 pub fn available_devices(show_all: bool) -> Result<Vec<SerialPortInfo>> {

@@ -62,7 +62,7 @@ pub async fn execute(
         "h" | "help" => Ok(show_help(None)),
         "c" | "continue" => commands::continue_command(device_port).await,
         "b" | "breakpoint" => commands::breakpoint_command(args, state, device_port),
-        "p" | "print" => commands::print_command(args, state),
+        "p" | "print" => commands::print_command(args, state, device_port).await,
         "q" | "quit" => Ok(commands::quit_command(state, device_port, halt)),
         _ => {
             println!(

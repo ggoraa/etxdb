@@ -37,12 +37,12 @@ lazy_static! {
 }
 
 #[cfg(target_family = "windows")]
-fn is_port_serial(port: &String) -> bool {
+fn is_port_serial(port: &str) -> bool {
     port.contains("COM")
 }
 
 #[cfg(target_family = "unix")]
-fn is_port_serial(port: &String) -> bool {
+fn is_port_serial(port: &str) -> bool {
     port.contains("/dev/tty") || port.contains("/dev/cu")
 }
 

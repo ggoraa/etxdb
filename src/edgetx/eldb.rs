@@ -1,13 +1,10 @@
-use std::collections::VecDeque;
-use std::time::Duration;
-
-use crate::arcmut;
-
 use super::{comm::DevicePortBox, eldp};
+use crate::arcmut;
 use anyhow::anyhow;
 use anyhow::Result;
 use crossterm::style::Stylize;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::Mutex;

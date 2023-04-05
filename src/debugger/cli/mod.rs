@@ -1,52 +1,18 @@
 use std::cell::Cell;
 
-use crate::{arcmut, edgetx::comm::DevicePortBox};
+use crate::{
+    arcmut,
+    debugger::cli::consts::{COMMANDS, VALID_COMMANDS},
+    edgetx::comm::DevicePortBox,
+};
 
 use super::state::State;
 use crossterm::style::Stylize;
-use lazy_static::lazy_static;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 pub mod commands;
-
-const COMMAND_HANDLERS: [Command; 4] = [
-    Command {
-        name: "continue",
-        shorthand: Some("c"),
-        help: "continue command help text", // TODO: Fill
-    },
-    Command {
-        name: "breakpoint",
-        shorthand: Some("b"),
-        help: "breakpoint command help text", // TODO: Fill
-    },
-    Command {
-        name: "print",
-        shorthand: Some("p"),
-        help: "print command help text", // TODO: Fill
-    },
-    Command {
-        name: "quit",
-        shorthand: Some("q"),
-        help: "Stops current debugging session and exits etxdb.", // TODO: Fill
-    },
-];
-
-lazy_static! {
-    static ref VALID_COMMANDS: Vec<&'static str> = {
-        COMMAND_HANDLERS
-            .into_iter()
-            .flat_map(|command| {
-                let mut vec = vec![command.name];
-                if command.shorthand.is_some() {
-                    vec.push(command.shorthand.unwrap());
-                }
-                vec
-            })
-            .collect()
-    };
-}
+pub mod consts;
 
 pub async fn execute(
     command: String,
@@ -94,7 +60,7 @@ fn show_help(command: Option<Command>) {
         });
 
         println!("{}", "Debugger commands:".white().bold());
-        for command in COMMAND_HANDLERS {
+        for command in COMMANDS {
             println!(
                 "- {}{}  {}",
                 if command.shorthand.is_none() {
@@ -111,7 +77,7 @@ fn show_help(command: Option<Command>) {
     }
 }
 
-struct Command<'a> {
+pub struct Command<'a> {
     name: &'a str,
     shorthand: Option<&'a str>,
     help: &'a str,

@@ -10,6 +10,8 @@ use prost::Message;
 use std::{cell::Cell, collections::VecDeque, sync::Arc};
 use tokio::{io::AsyncWriteExt, sync::Mutex};
 
+use super::consts::{QUIT_NO_CHOICE, QUIT_YES_CHOICE};
+
 pub async fn continue_command(device_port: arcmut!(DevicePortBox)) -> Result<()> {
     let msg = eldp::ExecuteDebuggerCommand {
         command: Some(eldp::Command::Continue.into()),
@@ -57,15 +59,13 @@ pub async fn print_command(
 }
 
 pub fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePortBox), halt: &Cell<bool>) {
-    const YES_CHOICE: &str = "Yes, stop and quit";
-    const NO_CHOICE: &str = "No, abort!";
     let answer = Select::new(
         "You sure you want to stop this session and quit?",
-        vec![YES_CHOICE, NO_CHOICE],
+        vec![QUIT_YES_CHOICE, QUIT_NO_CHOICE],
     )
     .prompt();
 
-    if answer.unwrap() == YES_CHOICE {
+    if answer.unwrap() == QUIT_YES_CHOICE {
         halt.set(true);
     }
 }

@@ -1,17 +1,14 @@
 use crate::{
     arcmut,
     debugger::state::State,
-    edgetx::{comm::DevicePortBox, eldp},
+    edgetx::{comm::DevicePortBox, eldb, eldp},
 };
 use anyhow::{anyhow, Result};
-use crossterm::style::Stylize;
+
 use inquire::Select;
 use prost::Message;
-use std::{cell::Cell, sync::Arc, time::Duration, collections::VecDeque};
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    sync::Mutex,
-};
+use std::{cell::Cell, collections::VecDeque, sync::Arc};
+use tokio::{io::AsyncWriteExt, sync::Mutex};
 
 pub async fn continue_command(device_port: arcmut!(DevicePortBox)) -> Result<()> {
     let msg = eldp::ExecuteDebuggerCommand {
@@ -47,34 +44,14 @@ pub async fn print_command(
             expression: Some(args[0].clone()),
         },
     ));
-    let data = eldp::encode(request)?;
-    let mut device_port = device_port.lock().await;
 
-    let mut buf: Vec<u8> = Vec::with_capacity(50);
-    buf.resize(50, 0);
+    let data = eldb::send_request(device_port, request).await?;
 
-    let mut retries = 0;
-    loop {
-        device_port.write_all(&buf).await?;
-        if tokio::time::timeout(Duration::from_secs(3), device_port.read(&mut buf))
-            .await
-            .is_ok()
-        {
-            println!("Received: {:?}", eldp::Response::decode(VecDeque::from(buf)));
-            break;
-        } else {
-            retries += 1;
-            if retries == 6 {
-                return Err(anyhow!("ELDB did not respond"));
-            } else {
-                println!(
-                    "{} {}",
-                    "Warning:".yellow().bold(),
-                    format!("{} {}", "ELDB did not respond, retry", retries).yellow()
-                );
-            }
-        }
-    }
+    println!("Received: {:?}", String::from_utf8(data.clone()));
+    println!(
+        "Received message: {:?}",
+        eldp::Response::decode(VecDeque::from(data))
+    );
 
     Ok(())
 }

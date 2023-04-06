@@ -19,25 +19,33 @@ pub async fn send_request(
     let mut buf: Vec<u8> = vec![0; 2048];
 
     let mut retries = 0;
+    let mut try_again = |err: _| {
+        retries += 1;
+        Ok(if retries == 6 {
+            return Err(anyhow!("ELDB did not respond ({})", err));
+        } else {
+            println!(
+                "{} {}",
+                "Warning:".yellow().bold(),
+                format!("ELDB did not respond ({}), retry {}", err, retries).yellow()
+            );
+        })
+    };
     loop {
         device_port.write_all(&msg_data).await?;
 
         let result = tokio::time::timeout(Duration::from_secs(3), device_port.read(&mut buf)).await;
         match result {
-            Ok(_) => {
-                return Ok(buf);
+            Ok(result) => {
+                match result {
+                    Ok(size) => {
+                        return Ok(buf[..size - 1].to_vec());
+                    },
+                    Err(err) => try_again(err)?,
+                }
             }
             Err(err) => {
-                retries += 1;
-                if retries == 6 {
-                    return Err(anyhow!("ELDB did not respond ({})", err));
-                } else {
-                    println!(
-                        "{} {}",
-                        "Warning:".yellow().bold(),
-                        format!("ELDB did not respond ({}), retry {}", err, retries).yellow()
-                    );
-                }
+                try_again(err.into())?;
             }
         }
     }

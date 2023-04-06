@@ -190,8 +190,11 @@ message DebugStatus {
 message SystemInfo {
     optional string osName = 1;
     optional Version version = 2;
-    optional fixed32 batteryVoltage = 3;
-    optional int32 localTime = 4;
+    optional string versionSuffix = 3;
+    optional string codename = 4;
+    optional string gitTag = 5;
+    optional string deviceIdentifier = 6;
+    optional fixed32 batteryVoltage = 7;
 }
 
 // host to client

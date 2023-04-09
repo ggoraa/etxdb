@@ -49,7 +49,7 @@ pub async fn print_command(
 
     let data = eldb::send_request(device_port, request).await?;
 
-    println!("Received: {:?}", String::from_utf8(data.clone()));
+    // println!("Received: {:?}", String::from_utf8_lossy(&data));
     println!(
         "Received message: {:?}",
         eldp::Response::decode(VecDeque::from(data))

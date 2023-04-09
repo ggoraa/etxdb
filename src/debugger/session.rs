@@ -45,22 +45,9 @@ async fn cli_task(halt: &Cell<bool>, state: arcmut!(State), device_port: arcmut!
         prompt();
 
         reader.read_until(b'\n', &mut buf).await.unwrap();
-        let command_string = String::from_utf8(buf.clone()).unwrap();
-        let mut command_vec: Vec<String> = command_string
-            .split(' ')
-            .map(|x| x.replace('\n', ""))
-            .collect();
-        let command = command_vec[0].clone();
-        command_vec.remove(0);
+        let (command, args) = parse_command(&buf);
 
-        cli::execute(
-            command,
-            command_vec,
-            halt,
-            state.clone(),
-            device_port.clone(),
-        )
-        .await;
+        cli::execute(command, args, halt, state.clone(), device_port.clone()).await;
 
         buf.clear();
     }
@@ -103,4 +90,15 @@ async fn stop_session(device_port: arcmut!(DevicePortBox)) -> Result<()> {
 fn prompt() {
     print!("{} ", debugger::consts::PROMPT_INPUT_NAME.white().bold());
     std::io::stdout().flush().unwrap();
+}
+
+fn parse_command(buf: &Vec<u8>) -> (String, Vec<String>) {
+    let command_string = String::from_utf8(buf.clone()).unwrap();
+    let mut command_vec: Vec<String> = command_string
+        .split(' ')
+        .map(|x| x.replace('\n', ""))
+        .collect();
+    let command = command_vec[0].clone();
+    command_vec.remove(0);
+    (command, command_vec)
 }

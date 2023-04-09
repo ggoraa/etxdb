@@ -78,6 +78,8 @@ pub async fn start(port: String, project_src: PathBuf) -> Result<()> {
 
     device_port.write_all(&msg_buf).await?;
 
+    // TODO: Do error handling, ELDB can also respond with an error
+
     session::begin(device_port, project_src).await?;
 
     Ok(())

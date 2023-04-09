@@ -1,14 +1,15 @@
 #![allow(unused_variables, incomplete_features)] // TODO: Remove unused_variables before a release
-use anyhow::{Error, Result};
+use anyhow::Result;
 use clap::Parser;
 use cli::handlers;
+use crossterm::terminal::disable_raw_mode;
 
 pub mod cli;
 pub mod debugger;
 pub mod edgetx;
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() -> Result<()> {
     let args = cli::Args::parse();
 
     match args.command {
@@ -17,5 +18,6 @@ async fn main() -> Result<(), Error> {
         cli::Commands::Init { port } => handlers::init(port)?,
         cli::Commands::Stop { port } => handlers::stop(port)?,
     }
+    disable_raw_mode()?;
     Ok(())
 }

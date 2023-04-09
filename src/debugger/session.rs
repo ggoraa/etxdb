@@ -58,16 +58,15 @@ async fn device_port_task(
     device_port: arcmut!(DevicePortBox),
     state: arcmut!(State),
 ) {
-    let mut rx_buf = Vec::<u8>::new();
+    let mut rx_buf = Vec::new();
     rx_buf.resize(1, 0);
 
     while !halt.get() {
-        if timeout(
+        if let Ok(result) = timeout(
             Duration::from_millis(200),
             device_port.lock().await.read(&mut rx_buf),
         )
         .await
-        .is_ok()
         {
             // TODO: Implement serial communication
         }

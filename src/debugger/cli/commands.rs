@@ -1,13 +1,17 @@
 use crate::{
     arcmut,
-    debugger::state::State,
-    edgetx::{comm::DevicePortBox, eldb, eldp},
+    debugger::{
+        cli::consts::{COMMANDS, VALID_COMMANDS},
+        state::State,
+    },
+    edgetx::{self, comm::DevicePortBox, eldp},
 };
 use anyhow::{anyhow, Result};
 
+use crossterm::style::Stylize;
 use inquire::Select;
-use prost::Message;
-use std::{cell::Cell, collections::VecDeque, sync::Arc};
+
+use std::{cell::Cell, sync::Arc};
 use tokio::{io::AsyncWriteExt, sync::Mutex};
 
 use super::consts::{QUIT_NO_CHOICE, QUIT_YES_CHOICE};
@@ -47,13 +51,9 @@ pub async fn print_command(
         },
     ));
 
-    let data = eldb::send_request(device_port, request).await?;
+    let response = edgetx::comm::send_request(device_port, request).await?;
 
-    // println!("Received: {:?}", String::from_utf8_lossy(&data));
-    println!(
-        "Received message: {:?}",
-        eldp::Response::decode(VecDeque::from(data))
-    );
+    println!("Received message: {:?}", response);
 
     Ok(())
 }
@@ -68,4 +68,40 @@ pub fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePortBox), 
     if answer.unwrap() == QUIT_YES_CHOICE {
         halt.set(true);
     }
+}
+
+pub fn help_command(args: Vec<String>) -> Result<()> {
+    if let Some(command) = args.get(0) {
+        if let Some(command) = COMMANDS
+            .into_iter()
+            .find(|c| c.name == command || c.shorthand == Some(command))
+        {
+            todo!()
+        } else {
+            return Err(anyhow!("Unknown command {}", command));
+        }
+    } else {
+        let longest_str = VALID_COMMANDS.iter().fold(VALID_COMMANDS[0], |acc, &item| {
+            if item.len() > acc.len() {
+                item
+            } else {
+                acc
+            }
+        });
+
+        println!("{}", "Debugger commands:".white().bold());
+        for command in COMMANDS {
+            println!(
+                "- {}{}  {}",
+                if command.shorthand.is_none() {
+                    "".to_string()
+                } else {
+                    format!("({})", command.shorthand.unwrap())
+                },
+                format!("{:width$}", command.name, width = longest_str.len()).bold(),
+                command.help.italic()
+            );
+        }
+    }
+    Ok(())
 }

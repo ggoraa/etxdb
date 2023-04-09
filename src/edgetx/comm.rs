@@ -45,15 +45,15 @@ pub async fn send_request(
     device_port: arcmut!(DevicePortBox),
     request: eldp::Request,
 ) -> Result<eldp::Response> {
-    let msg_data = eldp::encode(request)?;
     let mut device_port = device_port.lock().await;
 
+    let msg_data = eldp::encode(request)?;
     let mut buf: Vec<u8> = vec![0; 2048];
 
     let mut retries = 0;
     let mut try_again = |err: _| {
         retries += 1;
-        Ok(if retries == 6 {
+        if retries == 6 {
             return Err(anyhow!("ELDB did not respond ({})", err));
         } else {
             println!(
@@ -61,7 +61,8 @@ pub async fn send_request(
                 "Warning:".yellow().bold(),
                 format!("ELDB did not respond ({}), retry {}", err, retries).yellow()
             );
-        })
+        }
+        Ok(())
     };
     loop {
         device_port.write_all(&msg_data).await?;
@@ -71,7 +72,7 @@ pub async fn send_request(
             Ok(result) => match result {
                 Ok(size) => {
                     let buf = &buf[..size - 1];
-                    println!("Received data: {:?}", buf);
+                    // println!("Received data: {:?}", String::from_utf8_lossy(&buf));
                     let result = eldp::Response::decode(buf)?;
                     return Ok(result);
                 }

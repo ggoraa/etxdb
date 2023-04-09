@@ -1,7 +1,7 @@
+use std::cell::Cell;
 use std::io::Write;
 use std::sync::Arc;
 use std::time::Duration;
-use std::{cell::Cell, path::PathBuf};
 
 use crossterm::style::Stylize;
 use tokio::io::{self, AsyncWriteExt};
@@ -17,15 +17,12 @@ use crate::edgetx::comm::DevicePortBox;
 use crate::edgetx::eldp;
 use crate::{arcmut, debugger, new_arcmut};
 
-pub async fn begin(mut device_port: DevicePortBox, src: PathBuf) -> Result<()> {
+pub async fn begin(device_port: arcmut!(DevicePortBox), mut state: State) -> Result<()> {
     let halt = Cell::new(false);
-
-    let mut state = State { proj_root: src };
 
     // all of this is so that they can be safely accessed
     // between tasks
     let state = new_arcmut!(state);
-    let device_port = new_arcmut!(device_port);
 
     tokio::join!(
         cli_task(&halt, state.clone(), device_port.clone()),
@@ -76,8 +73,8 @@ async fn device_port_task(
 
 async fn stop_session(device_port: arcmut!(DevicePortBox)) -> Result<()> {
     let request = eldp::make_request(eldp::request::Content::ExecuteDebuggerCommand(
-        eldp::ExecuteDebuggerCommand {
-            command: Some(eldp::Command::Stop.into()),
+        eldp::ExecuteCommand {
+            command: Some(eldp::execute_command::Command::Stop.into()),
         },
     ));
     let buf = eldp::encode(request).unwrap(); // will never fail
@@ -91,8 +88,8 @@ fn prompt() {
     std::io::stdout().flush().unwrap();
 }
 
-fn parse_command(buf: &Vec<u8>) -> (String, Vec<String>) {
-    let command_string = String::from_utf8(buf.clone()).unwrap();
+fn parse_command(buf: &[u8]) -> (String, Vec<String>) {
+    let command_string = String::from_utf8(buf.to_owned()).unwrap();
     let mut command_vec: Vec<String> = command_string
         .split(' ')
         .map(|x| x.replace('\n', ""))

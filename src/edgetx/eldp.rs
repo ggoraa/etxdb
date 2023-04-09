@@ -1,6 +1,27 @@
+use std::fmt::Display;
+
 use anyhow::Result;
 
 include!(concat!(env!("OUT_DIR"), "/edgetx.eldp.rs"));
+
+impl Display for error::Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            error::Type::Unknown => write!(f, "Unknown"),
+            error::Type::BadMessage => write!(f, "Bad message"),
+            error::Type::NotStartedYet => write!(f, "Not started yet"),
+            error::Type::AlreadyStarted => write!(f, "Already started"),
+            error::Type::FailedStart => write!(f, "Failed start"),
+            error::Type::UnknownTarget => write!(f, "Unknown target"),
+        }
+    }
+}
+
+impl Display for Version {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
+    }
+}
 
 pub fn make_request(content: request::Content) -> Request {
     Request {

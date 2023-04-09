@@ -17,8 +17,8 @@ use tokio::{io::AsyncWriteExt, sync::Mutex};
 use super::consts::{QUIT_NO_CHOICE, QUIT_YES_CHOICE};
 
 pub async fn continue_command(device_port: arcmut!(DevicePortBox)) -> Result<()> {
-    let msg = eldp::ExecuteDebuggerCommand {
-        command: Some(eldp::Command::Continue.into()),
+    let msg = eldp::ExecuteCommand {
+        command: Some(eldp::execute_command::Command::Continue.into()),
     };
     let request = eldp::make_request(eldp::request::Content::ExecuteDebuggerCommand(msg));
     let data = eldp::encode(request)?;

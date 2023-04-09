@@ -1,17 +1,17 @@
-use std::path::PathBuf;
-
-use anyhow::anyhow;
-use anyhow::Result;
-use lazy_static::lazy_static;
-use prost::Message;
-use regex::Regex;
-use tokio::io::AsyncWriteExt;
-use tokio::net::TcpSocket;
-use tokio_serial::SerialPortBuilderExt;
-
 use crate::edgetx;
 use crate::edgetx::comm::DevicePort;
 use crate::edgetx::eldp;
+use anyhow::anyhow;
+use anyhow::Result;
+use lazy_static::lazy_static;
+use regex::Regex;
+use std::path::PathBuf;
+use std::sync::Arc;
+use tokio::net::TcpSocket;
+use tokio::sync::Mutex;
+use tokio_serial::SerialPortBuilderExt;
+
+use self::state::State;
 
 pub mod cli;
 pub mod consts;
@@ -63,24 +63,47 @@ async fn get_device_port(port: String) -> Result<Box<dyn DevicePort>> {
 
 pub async fn start(port: String, project_src: PathBuf) -> Result<()> {
     let mut device_port = get_device_port(port).await?;
+    let device_port = new_arcmut!(device_port);
 
     // TODO: Use CLI arguments
-    let msg = eldp::StartDebug {
-        target_type: Some(eldp::DebugTarget::Script.into()),
-        target_name: Some("file.lua".to_owned()),
-        ..Default::default()
-    };
-    let request = eldp::make_request(eldp::request::Content::StartDebug(msg));
+    let request = eldp::make_request(eldp::request::Content::StartDebug(eldp::StartDebug {
+        target_type: Some(eldp::start_debug::Target::Standalone.into()),
+        target_name: Some("badapple.lua".to_owned()),
+    }));
 
-    let mut msg_buf = Vec::<u8>::new();
-    msg_buf.reserve(request.encoded_len());
-    request.encode(&mut msg_buf)?;
+    let response = edgetx::comm::send_request(device_port.clone(), request).await?;
 
-    device_port.write_all(&msg_buf).await?;
+    match response.content.unwrap() {
+        eldp::response::Content::Error(error) => {
+            return Err(anyhow!(
+                "Failed to start ELDB ({}): {}",
+                eldp::error::Type::from_i32(error.r#type.unwrap()).unwrap(),
+                error.message.unwrap_or("(no message)".to_string())
+            ))
+        }
+        eldp::response::Content::SystemInfo(info) => {
+            let inf = info.clone();
+            println!(
+                "OS: {} {}-{} {} ({})\nDevice target: {}",
+                inf.os_name.unwrap(),
+                inf.version.unwrap(),
+                inf.version_tag.unwrap(),
+                inf.codename.unwrap(),
+                inf.git_tag.unwrap(),
+                inf.device_identifier.unwrap()
+            );
 
-    // TODO: Do error handling, ELDB can also respond with an error
+            let state = State {
+                proj_root: project_src,
+                system_info: info,
+            };
 
-    session::begin(device_port, project_src).await?;
+            session::begin(device_port.clone(), state).await?;
+        }
+        _ => {
+            return Err(anyhow!("Failed to start ELDB: Expected system info but received else. Are etxdb and EdgeTX versions compatible?"));
+        }
+    }
 
     Ok(())
 }

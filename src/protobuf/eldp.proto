@@ -47,26 +47,6 @@ message Version {
     int32 patch = 3;
 }
 
-// This enum will extend in the future with
-// a release of EdgeTX 3.0
-enum DebugTarget {
-    SCRIPT = 0;
-}
-
-enum DebuggerState {
-    RUNNING = 0;
-    STOPPED_BREAKPOINT = 1;
-    STOPPED_ERROR = 2;
-}
-
-enum Command {
-    CONTINUE = 0;
-    STEP_INTO = 1;
-    STEP_OVER = 2;
-    PRINT = 3;
-    STOP = 4;
-}
-
 message Breakpoint {
     optional string file = 1;
     optional int32 line = 2;
@@ -108,7 +88,7 @@ message LuaDebugInfo {
 message Request {
     oneof content {
         ExecuteExpression executeExpression = 1;
-        ExecuteDebuggerCommand executeDebuggerCommand = 2;
+        ExecuteCommand executeDebuggerCommand = 2;
         SetBreakpoint setBreakpoint = 3;
         StartDebug startDebug = 4;
         GetBreakpoints getBreakpoints = 5;
@@ -135,7 +115,15 @@ message ExecuteExpression {
 }
 
 // client to host
-message ExecuteDebuggerCommand {
+message ExecuteCommand {
+    enum Command {
+        CONTINUE = 0;
+        STEP_INTO = 1;
+        STEP_OVER = 2;
+        PRINT = 3;
+        STOP = 4;
+    }
+
     optional Command command = 1;
 }
 
@@ -152,7 +140,13 @@ message SetBreakpoint {
 
 // client to host
 message StartDebug {
-    optional DebugTarget targetType = 1;
+    enum Target {
+        STANDALONE = 0;
+        WIDGET = 1;
+        MIXER = 2;
+    }
+
+    optional Target targetType = 1;
     optional string targetName = 2;
 }
 
@@ -182,7 +176,13 @@ message SwitchSerialMode {
 // used as a "heartbeat", to indicate that the debugger
 // is still running
 message DebugStatus {
-    optional DebuggerState state = 1;
+    enum State {
+        RUNNING = 0;
+        STOPPED_BREAKPOINT = 1;
+        STOPPED_ERROR = 2;
+    }
+
+    optional State state = 1;
     optional Breakpoint stoppedAtBreakpoint = 2;
 }
 
@@ -194,7 +194,6 @@ message SystemInfo {
     optional string codename = 4;
     optional string gitTag = 5;
     optional string deviceIdentifier = 6;
-    optional fixed32 batteryVoltage = 7;
 }
 
 // host to client
@@ -210,8 +209,10 @@ message Error {
         BAD_MESSAGE = 1; // not able to parse
         NOT_STARTED_YET = 2; // when ELDB is not started yet and you already start passing some goofy ahh messages to it
         ALREADY_STARTED = 3; // when ELDB is already started but you still try sending StartDebug
-        FAILED_START = 4;
+        FAILED_START = 4; // general error when ELDB was not able to be started
+        UNKNOWN_TARGET = 5; // if target is unknown (e.g. WIDGET on a monochrome radio)
     }
+
     optional Type type = 1;
     optional string message = 2;
 }

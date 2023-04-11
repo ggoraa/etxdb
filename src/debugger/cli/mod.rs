@@ -38,9 +38,9 @@ pub async fn execute(
 
     if let Err(err) = result {
         println!(
-            "{} {}",
+            "{} {:?}",
             format!("Error in {}:", command.italic()).red().bold(),
-            err.to_string().red().italic()
+            err
         );
     }
 }

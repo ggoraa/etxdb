@@ -1,8 +1,9 @@
+use self::state::State;
 use crate::config;
 use crate::edgetx;
 use crate::edgetx::comm::DevicePortBox;
 use crate::edgetx::eldp;
-use eyre::eyre;
+use eyre::bail;
 use eyre::Result;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -11,8 +12,6 @@ use std::sync::Arc;
 use tokio::net::TcpSocket;
 use tokio::sync::Mutex;
 use tokio_serial::SerialPortBuilderExt;
-
-use self::state::State;
 
 pub mod cli;
 pub mod consts;
@@ -56,9 +55,7 @@ async fn get_device_port(port: String) -> Result<DevicePortBox> {
         let tcp_stream = sock.connect(port.parse().unwrap()).await?;
         Ok(Box::new(tcp_stream))
     } else {
-        Err(eyre!(
-            "Supplied port is neither a serial port nor an IP address"
-        ))
+        bail!("Supplied port is neither a serial port nor an IP address")
     }
 }
 
@@ -79,11 +76,11 @@ pub async fn start(port: String) -> Result<()> {
 
     match response.content.unwrap() {
         eldp::response::Content::Error(error) => {
-            return Err(eyre!(
+            bail!(
                 "Failed to start ELDB ({}): {}",
                 eldp::error::Type::from_i32(error.r#type.unwrap()).unwrap(),
                 error.message.unwrap_or("(no message)".to_string())
-            ))
+            );
         }
         eldp::response::Content::SystemInfo(info) => {
             let inf = info.clone();
@@ -105,7 +102,7 @@ pub async fn start(port: String) -> Result<()> {
             session::begin(device_port.clone(), state).await?;
         }
         _ => {
-            return Err(eyre!("Failed to start ELDB: Expected system info but received else. Are etxdb and EdgeTX FW versions compatible?"));
+            bail!("Failed to start ELDB: Expected system info but received else. Are etxdb and EdgeTX FW versions compatible?");
         }
     }
 

@@ -1,9 +1,7 @@
 use crate::edgetx::eldp;
 use crate::{debugger, edgetx};
 use crossterm::style::Stylize;
-use eyre::{bail, 
-    Context, 
-Result};
+use eyre::{bail, Context, Result};
 use prost::Message;
 use tokio_serial::SerialPortType;
 

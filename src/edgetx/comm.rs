@@ -1,7 +1,8 @@
 use super::eldp;
 use crate::arcmut;
 use crossterm::style::Stylize;
-use eyre::eyre;
+use eyre::bail;
+use eyre::Context;
 use eyre::Result;
 use prost::Message;
 use std::sync::Arc;
@@ -47,14 +48,14 @@ pub async fn send_request(
 ) -> Result<eldp::Response> {
     let mut device_port = device_port.lock().await;
 
-    let msg_data = eldp::encode(request)?;
+    let msg_data = eldp::encode(request).wrap_err("Failed to encode ELDP request")?;
     let mut buf: Vec<u8> = vec![0; 2048];
 
     let mut retries = 0;
     let mut try_again = |err: _| {
         retries += 1;
         if retries == 6 {
-            return Err(eyre!("ELDB did not respond ({})", err));
+            bail!("ELDB did not respond ({})", err);
         } else {
             println!(
                 "{} {}",
@@ -65,7 +66,10 @@ pub async fn send_request(
         Ok(())
     };
     loop {
-        device_port.write_all(&msg_data).await?;
+        device_port
+            .write_all(&msg_data)
+            .await
+            .wrap_err("Failed to send ELDP request")?;
 
         let result = tokio::time::timeout(Duration::from_secs(3), device_port.read(&mut buf)).await;
         match result {
@@ -78,9 +82,7 @@ pub async fn send_request(
                 }
                 Err(err) => try_again(err)?,
             },
-            Err(err) => {
-                try_again(err.into())?;
-            }
+            Err(err) => try_again(err.into())?,
         }
     }
 }

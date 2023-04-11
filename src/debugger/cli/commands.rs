@@ -6,13 +6,13 @@ use crate::{
     },
     edgetx::{self, comm::DevicePortBox, eldp},
 };
-use eyre::{eyre, Result};
+use eyre::{bail, Result};
 
 use crossterm::style::Stylize;
 use inquire::Select;
 
 use std::{cell::Cell, sync::Arc};
-use tokio::{io::AsyncWriteExt, sync::Mutex};
+use tokio::sync::Mutex;
 
 use super::consts::{QUIT_NO_CHOICE, QUIT_YES_CHOICE};
 
@@ -21,9 +21,7 @@ pub async fn continue_command(device_port: arcmut!(DevicePortBox)) -> Result<()>
         command: Some(eldp::execute_command::Command::Continue.into()),
     };
     let request = eldp::make_request(eldp::request::Content::ExecuteDebuggerCommand(msg));
-    let data = eldp::encode(request)?;
-    let mut device_port = device_port.lock().await;
-    device_port.write_all(&data).await?;
+    let response = edgetx::comm::send_request(device_port, request).await?;
     println!("continue");
     Ok(())
 }
@@ -43,7 +41,7 @@ pub async fn print_command(
     device_port: arcmut!(DevicePortBox),
 ) -> Result<()> {
     if args.get(0).is_none() || args.get(0).unwrap().is_empty() {
-        return Err(eyre!("No expression was passed"));
+        bail!("No expression was passed");
     }
     let request = eldp::make_request(eldp::request::Content::ExecuteExpression(
         eldp::ExecuteExpression {
@@ -78,7 +76,7 @@ pub fn help_command(args: Vec<String>) -> Result<()> {
         {
             todo!()
         } else {
-            return Err(eyre!("Unknown command {}", command));
+            bail!("Unknown command {}", command);
         }
     } else {
         let longest_str = VALID_COMMANDS.iter().fold(VALID_COMMANDS[0], |acc, &item| {

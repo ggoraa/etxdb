@@ -1,6 +1,6 @@
 #![allow(unused_variables)] // TODO: Remove unused_variables before a release
 use clap::Parser;
-use cli::handlers;
+use cli::commands;
 use crossterm::terminal::disable_raw_mode;
 use eyre::Result;
 
@@ -16,10 +16,10 @@ async fn main() -> Result<()> {
     let args = cli::Args::parse();
 
     match args.command {
-        cli::Commands::List { show_all } => handlers::list(show_all)?,
-        cli::Commands::Start { port } => handlers::start(port).await?,
-        cli::Commands::Init { port } => handlers::init(port)?,
-        cli::Commands::Stop { port } => handlers::stop(port)?,
+        cli::Commands::List { show_all } => commands::list(show_all)?,
+        cli::Commands::Start { port } => commands::start(port).await?,
+        cli::Commands::Init { port } => commands::init(port)?,
+        cli::Commands::Stop { port } => commands::stop(port)?,
         cli::Commands::Attach { port } => todo!(),
     }
 

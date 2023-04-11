@@ -1,4 +1,4 @@
-use eyre::{Result, Context};
+use eyre::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 use tokio::fs;

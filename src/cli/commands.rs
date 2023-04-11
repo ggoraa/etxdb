@@ -1,7 +1,9 @@
 use crate::edgetx::eldp;
 use crate::{debugger, edgetx};
 use crossterm::style::Stylize;
-use eyre::{eyre, Result};
+use eyre::{bail, 
+    Context, 
+Result};
 use prost::Message;
 use tokio_serial::SerialPortType;
 
@@ -50,23 +52,20 @@ pub fn init(port: String) -> Result<()> {
     device_port.write_all(edgetx::consts::ELDP_INIT_CLI_COMMAND.as_bytes())?;
     let success_msg = edgetx::consts::ELDP_INIT_SUCCESS_RESPONSE.to_owned();
     let mut buf: [u8; 30] = [0; 30];
-    if let Err(err) = device_port.read(&mut buf) {
-        return Err(eyre!(
-            "Failed to init debug connection ({}), maybe it's already initialised?",
-            err
-        ));
-    }
+    device_port
+        .read(&mut buf)
+        .wrap_err("Failed to init debug connection, maybe it's already initialised?")?;
 
     let response = String::from_utf8(buf.to_vec())?;
 
     if response.contains(&success_msg) {
         Ok(())
     } else {
-        Err(eyre!(
-            "Failed to init debug connection, received response \"{}\", expected \"{}\"",
-            response,
-            success_msg
-        ))
+        bail!(
+            "Failed to init debug connection, expected response \"{}\", got \"{}\", maybe it's already initialised?",
+            success_msg,
+            response
+        );
     }
 }
 

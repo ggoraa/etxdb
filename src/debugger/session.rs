@@ -9,7 +9,7 @@ use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 use tokio::sync::Mutex;
 use tokio::time::timeout;
 
-use anyhow::Result;
+use eyre::Result;
 
 use super::cli;
 use super::state::State;

@@ -1,8 +1,9 @@
+use crate::config;
 use crate::edgetx;
-use crate::edgetx::comm::DevicePort;
+use crate::edgetx::comm::DevicePortBox;
 use crate::edgetx::eldp;
-use anyhow::anyhow;
-use anyhow::Result;
+use eyre::eyre;
+use eyre::Result;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::path::PathBuf;
@@ -46,7 +47,7 @@ fn is_port_serial(port: &str) -> bool {
     port.contains("/dev/tty") || port.contains("/dev/cu")
 }
 
-async fn get_device_port(port: String) -> Result<Box<dyn DevicePort>> {
+async fn get_device_port(port: String) -> Result<DevicePortBox> {
     if is_port_serial(&port) {
         let serial_stream = edgetx::comm::serial_port(port).open_native_async()?;
         Ok(Box::new(serial_stream))
@@ -55,27 +56,30 @@ async fn get_device_port(port: String) -> Result<Box<dyn DevicePort>> {
         let tcp_stream = sock.connect(port.parse().unwrap()).await?;
         Ok(Box::new(tcp_stream))
     } else {
-        Err(anyhow!(
+        Err(eyre!(
             "Supplied port is neither a serial port nor an IP address"
         ))
     }
 }
 
-pub async fn start(port: String, project_src: PathBuf) -> Result<()> {
+pub async fn start(port: String) -> Result<()> {
+    let config = config::read_fs().await?;
+
     let mut device_port = get_device_port(port).await?;
     let device_port = new_arcmut!(device_port);
 
-    // TODO: Use CLI arguments
+    // TODO: Use config values
+    // TODO: Support different kinds of scripts
     let request = eldp::make_request(eldp::request::Content::StartDebug(eldp::StartDebug {
         target_type: Some(eldp::start_debug::Target::Standalone.into()),
-        target_name: Some("badapple.lua".to_owned()),
+        target_name: Some(config.target.clone()),
     }));
 
     let response = edgetx::comm::send_request(device_port.clone(), request).await?;
 
     match response.content.unwrap() {
         eldp::response::Content::Error(error) => {
-            return Err(anyhow!(
+            return Err(eyre!(
                 "Failed to start ELDB ({}): {}",
                 eldp::error::Type::from_i32(error.r#type.unwrap()).unwrap(),
                 error.message.unwrap_or("(no message)".to_string())
@@ -94,14 +98,14 @@ pub async fn start(port: String, project_src: PathBuf) -> Result<()> {
             );
 
             let state = State {
-                proj_root: project_src,
+                script: PathBuf::from(config.target),
                 system_info: info,
             };
 
             session::begin(device_port.clone(), state).await?;
         }
         _ => {
-            return Err(anyhow!("Failed to start ELDB: Expected system info but received else. Are etxdb and EdgeTX versions compatible?"));
+            return Err(eyre!("Failed to start ELDB: Expected system info but received else. Are etxdb and EdgeTX FW versions compatible?"));
         }
     }
 

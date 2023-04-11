@@ -6,7 +6,7 @@ use crate::{
     },
     edgetx::{self, comm::DevicePortBox, eldp},
 };
-use anyhow::{anyhow, Result};
+use eyre::{eyre, Result};
 
 use crossterm::style::Stylize;
 use inquire::Select;
@@ -43,7 +43,7 @@ pub async fn print_command(
     device_port: arcmut!(DevicePortBox),
 ) -> Result<()> {
     if args.get(0).is_none() || args.get(0).unwrap().is_empty() {
-        return Err(anyhow!("No expression was passed"));
+        return Err(eyre!("No expression was passed"));
     }
     let request = eldp::make_request(eldp::request::Content::ExecuteExpression(
         eldp::ExecuteExpression {
@@ -78,7 +78,7 @@ pub fn help_command(args: Vec<String>) -> Result<()> {
         {
             todo!()
         } else {
-            return Err(anyhow!("Unknown command {}", command));
+            return Err(eyre!("Unknown command {}", command));
         }
     } else {
         let longest_str = VALID_COMMANDS.iter().fold(VALID_COMMANDS[0], |acc, &item| {

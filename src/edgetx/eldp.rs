@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use anyhow::Result;
+use eyre::Result;
 
 include!(concat!(env!("OUT_DIR"), "/edgetx.eldp.rs"));
 

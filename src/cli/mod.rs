@@ -1,7 +1,6 @@
 pub mod handlers;
 
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 pub struct Args {
@@ -22,8 +21,7 @@ pub enum Commands {
     /// Stops ELDP connectivity on the radio.
     Stop { port: String },
     /// Starts a new debug session.
-    Start {
-        port: String,
-        project_src: Option<PathBuf>,
-    },
+    Start { port: String },
+    /// Connect to an already running debug session.
+    Attach { port: String },
 }

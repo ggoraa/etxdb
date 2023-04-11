@@ -1,12 +1,9 @@
-use std::path::PathBuf;
-
-use anyhow::{anyhow, Result};
-use crossterm::style::Stylize;
-use prost::Message;
-use tokio_serial::SerialPortType;
-
 use crate::edgetx::eldp;
 use crate::{debugger, edgetx};
+use crossterm::style::Stylize;
+use eyre::{eyre, Result};
+use prost::Message;
+use tokio_serial::SerialPortType;
 
 pub fn list(show_all: bool) -> Result<()> {
     let ports = edgetx::comm::available_devices(show_all)?;
@@ -43,8 +40,8 @@ pub fn list(show_all: bool) -> Result<()> {
     Ok(())
 }
 
-pub async fn start(port: String, project_src: Option<PathBuf>) -> Result<()> {
-    debugger::start(port, project_src.unwrap_or(std::env::current_dir()?)).await?;
+pub async fn start(port: String) -> Result<()> {
+    debugger::start(port).await?;
     Ok(())
 }
 
@@ -54,7 +51,7 @@ pub fn init(port: String) -> Result<()> {
     let success_msg = edgetx::consts::ELDP_INIT_SUCCESS_RESPONSE.to_owned();
     let mut buf: [u8; 30] = [0; 30];
     if let Err(err) = device_port.read(&mut buf) {
-        return Err(anyhow!(
+        return Err(eyre!(
             "Failed to init debug connection ({}), maybe it's already initialised?",
             err
         ));
@@ -65,7 +62,7 @@ pub fn init(port: String) -> Result<()> {
     if response.contains(&success_msg) {
         Ok(())
     } else {
-        Err(anyhow!(
+        Err(eyre!(
             "Failed to init debug connection, received response \"{}\", expected \"{}\"",
             response,
             success_msg

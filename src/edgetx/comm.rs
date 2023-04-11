@@ -1,8 +1,8 @@
 use super::eldp;
 use crate::arcmut;
-use anyhow::anyhow;
-use anyhow::Result;
 use crossterm::style::Stylize;
+use eyre::eyre;
+use eyre::Result;
 use prost::Message;
 use std::sync::Arc;
 use std::time::Duration;
@@ -54,7 +54,7 @@ pub async fn send_request(
     let mut try_again = |err: _| {
         retries += 1;
         if retries == 6 {
-            return Err(anyhow!("ELDB did not respond ({})", err));
+            return Err(eyre!("ELDB did not respond ({})", err));
         } else {
             println!(
                 "{} {}",

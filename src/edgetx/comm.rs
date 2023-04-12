@@ -76,7 +76,8 @@ pub async fn send_request(
             Ok(result) => match result {
                 Ok(size) => {
                     let buf = &buf[..size - 1];
-                    // println!("Received data: {:?}", String::from_utf8_lossy(&buf));
+                    #[cfg(debug_assertions)]
+                    println!("Received data: {:?}", String::from_utf8_lossy(&buf));
                     let result = eldp::Response::decode(buf)?;
                     return Ok(result);
                 }

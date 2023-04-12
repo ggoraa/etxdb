@@ -14,7 +14,7 @@ use inquire::Select;
 use std::{cell::Cell, sync::Arc};
 use tokio::sync::Mutex;
 
-use super::consts::{QUIT_NO_CHOICE, QUIT_YES_CHOICE};
+use super::consts::{QUIT_NO_CHOICE, QUIT_STOP_YES_CHOICE, QUIT_YES_CHOICE};
 
 pub async fn continue_command(device_port: arcmut!(DevicePortBox)) -> Result<()> {
     let msg = eldp::ExecuteCommand {
@@ -59,12 +59,25 @@ pub async fn print_command(
 pub fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePortBox), halt: &Cell<bool>) {
     let answer = Select::new(
         "You sure you want to stop this session and quit?",
-        vec![QUIT_YES_CHOICE, QUIT_NO_CHOICE],
+        vec![QUIT_STOP_YES_CHOICE, QUIT_YES_CHOICE, QUIT_NO_CHOICE],
     )
     .prompt();
 
-    if answer.unwrap() == QUIT_YES_CHOICE {
-        halt.set(true);
+    match answer.unwrap() {
+        QUIT_STOP_YES_CHOICE => {
+            let response = edgetx::comm::send_request(
+                device_port.clone(),
+                eldp::make_request(edgetx::eldp::request::Content::ExecuteDebuggerCommand(
+                    eldp::ExecuteCommand {
+                        command: Some(eldp::execute_command::Command::Stop.into()),
+                    },
+                )),
+            );
+            halt.set(true);
+        }
+        QUIT_YES_CHOICE => halt.set(true),
+        QUIT_NO_CHOICE => {}
+        _ => panic!("What the shit??"),
     }
 }
 

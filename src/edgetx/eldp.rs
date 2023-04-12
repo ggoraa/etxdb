@@ -13,6 +13,8 @@ impl Display for error::Type {
             error::Type::AlreadyStarted => write!(f, "Already started"),
             error::Type::FailedStart => write!(f, "Failed start"),
             error::Type::UnknownTarget => write!(f, "Unknown target"),
+            error::Type::FileDoesNotExist => write!(f, "File does not exist"),
+            error::Type::AlreadyStopped => write!(f, "Already stopped"),
         }
     }
 }

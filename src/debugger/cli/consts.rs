@@ -39,5 +39,6 @@ lazy_static! {
     };
 }
 
-pub const QUIT_YES_CHOICE: &str = "Yes, stop and quit";
+pub const QUIT_STOP_YES_CHOICE: &str = "Yes, stop and quit";
+pub const QUIT_YES_CHOICE: &str = "Yes, quit but don't stop";
 pub const QUIT_NO_CHOICE: &str = "No, abort!";

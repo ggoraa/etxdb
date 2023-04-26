@@ -55,8 +55,7 @@ async fn device_port_task(
     device_port: arcmut!(DevicePortBox),
     state: arcmut!(State),
 ) {
-    let mut rx_buf = Vec::new();
-    rx_buf.resize(1, 0);
+    let mut rx_buf = vec![0; 1024];
 
     while !halt.get() {
         if let Ok(result) = timeout(
@@ -65,6 +64,10 @@ async fn device_port_task(
         )
         .await
         {
+            if result.is_ok() {
+                #[cfg(debug_assertions)]
+                println!("Received data from device port: {}", String::from_utf8_lossy(&rx_buf));
+            }
             // TODO: Implement serial communication
         }
         if rx_buf.is_empty() {}

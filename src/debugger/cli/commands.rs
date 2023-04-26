@@ -22,16 +22,25 @@ pub async fn continue_command(device_port: arcmut!(DevicePortBox)) -> Result<()>
     };
     let request = eldp::make_request(eldp::request::Content::ExecuteDebuggerCommand(msg));
     let response = edgetx::comm::send_request(device_port, request).await?;
-    println!("continue");
     Ok(())
 }
 
-pub fn breakpoint_command(
+pub async fn breakpoint_command(
     args: Vec<String>,
     state: arcmut!(State),
     device_port: arcmut!(DevicePortBox),
 ) -> Result<()> {
-    println!("breakpoint");
+    if args.get(0).is_none() || args.get(0).unwrap().is_empty() {
+        bail!("No arguments supplied");
+    }
+    let request = eldp::make_request(eldp::request::Content::SetBreakpoint(eldp::SetBreakpoint {
+        breakpoint: Some(eldp::Breakpoint {
+            file: None,
+            line: args.get(0).map(|val| val.parse::<u32>().unwrap())
+        }),
+        state: Some(eldp::set_breakpoint::State::Enabled.into()),
+    }));
+    edgetx::comm::send_request(device_port, request).await;
     Ok(())
 }
 
@@ -56,7 +65,7 @@ pub async fn print_command(
     Ok(())
 }
 
-pub fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePortBox), halt: &Cell<bool>) {
+pub async fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePortBox), halt: &Cell<bool>) {
     let answer = Select::new(
         "You sure you want to stop this session and quit?",
         vec![QUIT_STOP_YES_CHOICE, QUIT_YES_CHOICE, QUIT_NO_CHOICE],

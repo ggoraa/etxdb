@@ -11,8 +11,8 @@ impl Display for error::Type {
             error::Type::BadMessage => write!(f, "Bad message"),
             error::Type::NotStartedYet => write!(f, "Not started yet"),
             error::Type::AlreadyStarted => write!(f, "Already started"),
-            error::Type::FailedStart => write!(f, "Failed start"),
-            error::Type::UnknownTarget => write!(f, "Unknown target"),
+            error::Type::Session => write!(f, "Session"),
+            error::Type::UnsupportedTarget => write!(f, "Unsupported target"),
             error::Type::FileDoesNotExist => write!(f, "File does not exist"),
             error::Type::AlreadyStopped => write!(f, "Already stopped"),
         }

@@ -96,7 +96,8 @@ pub async fn quit_command(
 
 pub fn help_command(args: Vec<String>) -> Result<()> {
     if let Some(command) = args.get(0) {
-        if let Some(command) = COMMANDS.iter()
+        if let Some(command) = COMMANDS
+            .iter()
             .into_iter()
             .find(|c| c.name == command || c.aliases.contains(&command.as_str()))
         {

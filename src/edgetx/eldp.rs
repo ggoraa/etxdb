@@ -15,6 +15,7 @@ impl Display for error::Type {
             error::Type::UnsupportedTarget => write!(f, "Unsupported target"),
             error::Type::FileDoesNotExist => write!(f, "File does not exist"),
             error::Type::AlreadyStopped => write!(f, "Already stopped"),
+            error::Type::UnknownRequest => write!(f, "Unknown request"),
         }
     }
 }

@@ -66,7 +66,10 @@ async fn device_port_task(
         {
             if result.is_ok() {
                 #[cfg(debug_assertions)]
-                println!("Received data from device port: {}", String::from_utf8_lossy(&rx_buf));
+                println!(
+                    "Received data from device port: {}",
+                    String::from_utf8_lossy(&rx_buf)
+                );
             }
             // TODO: Implement serial communication
         }
@@ -75,7 +78,7 @@ async fn device_port_task(
 }
 
 async fn stop_session(device_port: arcmut!(DevicePortBox)) -> Result<()> {
-    let request = eldp::make_request(eldp::request::Content::ExecuteDebuggerCommand(
+    let request = eldp::make_request(eldp::request::Content::ExecuteCommand(
         eldp::ExecuteCommand {
             command: Some(eldp::execute_command::Command::Stop.into()),
         },

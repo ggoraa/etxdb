@@ -1,38 +1,37 @@
 use super::Command;
 use lazy_static::lazy_static;
 
-pub const COMMANDS: [Command; 4] = [
+lazy_static! {
+
+pub static ref COMMANDS: [Command<'static>; 4] = [
     Command {
         name: "continue",
-        shorthand: Some("c"),
-        help: "continue command help text", // TODO: Fill
+        help: "continue command help text",
+        aliases: vec!["c"],
     },
     Command {
         name: "breakpoint",
-        shorthand: Some("b"),
+        aliases: vec!["b"],
         help: "breakpoint command help text", // TODO: Fill
     },
     Command {
         name: "print",
-        shorthand: Some("p"),
+        aliases: vec!["p"],
         help: "print command help text", // TODO: Fill
     },
     Command {
         name: "quit",
-        shorthand: Some("q"),
+        aliases: vec!["q"],
         help: "Stops current debugging session and exits etxdb.",
     },
 ];
-
-lazy_static! {
     pub static ref VALID_COMMANDS: Vec<&'static str> = {
         COMMANDS
-            .into_iter()
+            .iter()
             .flat_map(|command| {
                 let mut vec = vec![command.name];
-                if command.shorthand.is_some() {
-                    vec.push(command.shorthand.unwrap());
-                }
+                let mut aliases = command.aliases.clone();
+                vec.append(&mut aliases);
                 vec
             })
             .collect()

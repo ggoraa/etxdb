@@ -20,7 +20,7 @@ pub async fn continue_command(device_port: arcmut!(DevicePortBox)) -> Result<()>
     let msg = eldp::ExecuteCommand {
         command: Some(eldp::execute_command::Command::Continue.into()),
     };
-    let request = eldp::make_request(eldp::request::Content::ExecuteDebuggerCommand(msg));
+    let request = eldp::make_request(eldp::request::Content::ExecuteCommand(msg));
     let response = edgetx::comm::send_request(device_port, request).await?;
     Ok(())
 }
@@ -36,7 +36,7 @@ pub async fn breakpoint_command(
     let request = eldp::make_request(eldp::request::Content::SetBreakpoint(eldp::SetBreakpoint {
         breakpoint: Some(eldp::Breakpoint {
             file: None,
-            line: args.get(0).map(|val| val.parse::<u32>().unwrap())
+            line: args.get(0).map(|val| val.parse::<u32>().unwrap()),
         }),
         state: Some(eldp::set_breakpoint::State::Enabled.into()),
     }));
@@ -65,7 +65,11 @@ pub async fn print_command(
     Ok(())
 }
 
-pub async fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePortBox), halt: &Cell<bool>) {
+pub async fn quit_command(
+    state: arcmut!(State),
+    device_port: arcmut!(DevicePortBox),
+    halt: &Cell<bool>,
+) {
     let answer = Select::new(
         "You sure you want to stop this session and quit?",
         vec![QUIT_STOP_YES_CHOICE, QUIT_YES_CHOICE, QUIT_NO_CHOICE],
@@ -76,7 +80,7 @@ pub async fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePort
         QUIT_STOP_YES_CHOICE => {
             let response = edgetx::comm::send_request(
                 device_port.clone(),
-                eldp::make_request(edgetx::eldp::request::Content::ExecuteDebuggerCommand(
+                eldp::make_request(edgetx::eldp::request::Content::ExecuteCommand(
                     eldp::ExecuteCommand {
                         command: Some(eldp::execute_command::Command::Stop.into()),
                     },
@@ -92,9 +96,9 @@ pub async fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePort
 
 pub fn help_command(args: Vec<String>) -> Result<()> {
     if let Some(command) = args.get(0) {
-        if let Some(command) = COMMANDS
+        if let Some(command) = COMMANDS.iter()
             .into_iter()
-            .find(|c| c.name == command || c.shorthand == Some(command))
+            .find(|c| c.name == command || c.aliases.contains(&command.as_str()))
         {
             todo!()
         } else {
@@ -110,13 +114,13 @@ pub fn help_command(args: Vec<String>) -> Result<()> {
         });
 
         println!("{}", "Debugger commands:".white().bold());
-        for command in COMMANDS {
+        for command in COMMANDS.iter() {
             println!(
                 "- {}{}  {}",
-                if command.shorthand.is_none() {
+                if command.aliases.is_empty() {
                     "".to_string()
                 } else {
-                    format!("({})", command.shorthand.unwrap())
+                    format!("({:?})", command.aliases)
                 },
                 format!("{:width$}", command.name, width = longest_str.len()).bold(),
                 command.help.italic()

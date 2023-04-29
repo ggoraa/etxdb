@@ -47,6 +47,6 @@ pub async fn execute(
 
 pub struct Command<'a> {
     name: &'a str,
-    shorthand: Option<&'a str>,
+    aliases: Vec<&'a str>,
     help: &'a str,
 }

@@ -1,5 +1,4 @@
-
-use crate::{edgetx::comm::DevicePortBox, arcmut};
+use crate::{arcmut, edgetx::comm::DevicePortBox};
 
 use super::state::State;
 use crossterm::style::Stylize;

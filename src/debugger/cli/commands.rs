@@ -11,7 +11,7 @@ use eyre::{bail, Result};
 use crossterm::style::Stylize;
 use inquire::Select;
 
-use std::{sync::Arc};
+use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use super::consts::{QUIT_NO_CHOICE, QUIT_STOP_YES_CHOICE, QUIT_YES_CHOICE};

@@ -16,11 +16,9 @@ impl InteractiveStdin {
                 }
             }
         });
-        InteractiveStdin {
-            chan: recv
-        }
+        InteractiveStdin { chan: recv }
     }
-    
+
     /// Get the next line from stdin.
     ///
     /// Returns `Ok(None)` if stdin has been closed.

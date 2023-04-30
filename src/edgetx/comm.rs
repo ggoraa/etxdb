@@ -13,8 +13,8 @@ use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::sync::Mutex;
 use tokio_serial::{SerialPortBuilder, SerialPortInfo, SerialPortType};
 
-pub trait DevicePort: AsyncRead + AsyncWrite + Unpin {}
-impl<T: AsyncRead + AsyncWrite + Unpin> DevicePort for T {}
+pub trait DevicePort: AsyncRead + AsyncWrite + Unpin + Send + Sync {}
+impl<T: AsyncRead + AsyncWrite + Unpin + Send + Sync> DevicePort for T {}
 
 pub type DevicePortBox = Box<dyn DevicePort>;
 

@@ -19,16 +19,34 @@ pub mod session;
 pub mod state;
 
 #[macro_export]
-macro_rules! arcmut {
-    ($typename:ident) => {
+macro_rules! arcmutm {
+    ($typename:path) => {
         Arc<Mutex<&mut $typename>>
+    };
+
+    ($typename:path, $lifetime:lifetime) => {
+        Arc<Mutex<&$lifetime mut $typename>>
+    };
+}
+
+#[macro_export]
+macro_rules! new_arcmutm {
+    ($value:expr) => {
+        Arc::new(Mutex::new(&mut $value))
+    };
+}
+
+#[macro_export]
+macro_rules! arcmut {
+    ($typename:path) => {
+        Arc<Mutex<$typename>>
     };
 }
 
 #[macro_export]
 macro_rules! new_arcmut {
     ($value:expr) => {
-        Arc::new(Mutex::new(&mut $value))
+        Arc::new(Mutex::new($value))
     };
 }
 
@@ -62,7 +80,7 @@ async fn get_device_port(port: String) -> Result<DevicePortBox> {
 pub async fn start(port: String) -> Result<()> {
     let config = config::read_fs().await?;
 
-    let mut device_port = get_device_port(port).await?;
+    let device_port = get_device_port(port).await?;
     let device_port = new_arcmut!(device_port);
 
     // TODO: Use config values

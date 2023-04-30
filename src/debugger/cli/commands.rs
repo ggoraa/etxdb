@@ -11,7 +11,7 @@ use eyre::{bail, Result};
 use crossterm::style::Stylize;
 use inquire::Select;
 
-use std::{cell::Cell, sync::Arc};
+use std::{sync::Arc};
 use tokio::sync::Mutex;
 
 use super::consts::{QUIT_NO_CHOICE, QUIT_STOP_YES_CHOICE, QUIT_YES_CHOICE};
@@ -65,11 +65,7 @@ pub async fn print_command(
     Ok(())
 }
 
-pub async fn quit_command(
-    state: arcmut!(State),
-    device_port: arcmut!(DevicePortBox),
-    halt: &Cell<bool>,
-) {
+pub async fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePortBox)) {
     let answer = Select::new(
         "You sure you want to stop this session and quit?",
         vec![QUIT_STOP_YES_CHOICE, QUIT_YES_CHOICE, QUIT_NO_CHOICE],
@@ -86,9 +82,9 @@ pub async fn quit_command(
                     },
                 )),
             );
-            halt.set(true);
+            todo!("Implement shutdown");
         }
-        QUIT_YES_CHOICE => halt.set(true),
+        QUIT_YES_CHOICE => todo!("Implement shutdown"),
         QUIT_NO_CHOICE => {}
         _ => panic!("What the shit??"),
     }

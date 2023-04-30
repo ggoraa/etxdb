@@ -1,6 +1,5 @@
-use std::cell::Cell;
 
-use crate::{arcmut, edgetx::comm::DevicePortBox};
+use crate::{edgetx::comm::DevicePortBox, arcmut};
 
 use super::state::State;
 use crossterm::style::Stylize;
@@ -9,11 +8,11 @@ use tokio::sync::Mutex;
 
 pub mod commands;
 pub mod consts;
+pub mod interactive_stdin;
 
 pub async fn execute(
     command: String,
     args: Vec<String>,
-    halt: &Cell<bool>,
     state: arcmut!(State),
     device_port: arcmut!(DevicePortBox),
 ) {
@@ -25,7 +24,7 @@ pub async fn execute(
         "c" | "continue" => commands::continue_command(device_port).await,
         "b" | "breakpoint" => commands::breakpoint_command(args, state, device_port).await,
         "p" | "print" => commands::print_command(args, state, device_port).await,
-        "q" | "quit" => Ok(commands::quit_command(state, device_port, halt).await),
+        "q" | "quit" => Ok(commands::quit_command(state, device_port).await),
         _ => {
             println!(
                 "{} {}.",

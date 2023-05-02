@@ -25,12 +25,10 @@ pub static COMMANDS: [Command; 4] = [
     },
 ];
 
-pub static COMMAND_ALIASES: [CommandAlias; 1] = [
-    CommandAlias {
-        name: "c",
-        aliased_to: "continue",
-    }
-];
+pub static COMMAND_ALIASES: [CommandAlias; 1] = [CommandAlias {
+    name: "c",
+    aliased_to: "continue",
+}];
 
 pub mod quit_choice {
     pub const STOP_AND_QUIT: &str = "Yes, stop and quit";

@@ -65,7 +65,11 @@ pub async fn print_command(
 pub async fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePortBox)) {
     let answer = Select::new(
         "You sure you want to stop this session and quit?",
-        vec![quit_choice::STOP_AND_QUIT, quit_choice::QUIT, quit_choice::ABORT],
+        vec![
+            quit_choice::STOP_AND_QUIT,
+            quit_choice::QUIT,
+            quit_choice::ABORT,
+        ],
     )
     .prompt();
 
@@ -89,10 +93,7 @@ pub async fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePort
 
 pub fn help_command(args: Vec<String>) -> Result<()> {
     if let Some(command) = args.get(0) {
-        if let Some(command) = COMMANDS
-            .iter()
-            .find(|c| c.name.starts_with(command) )
-        {
+        if let Some(command) = COMMANDS.iter().find(|c| c.name.starts_with(command)) {
             todo!()
         } else {
             bail!("Unknown command {}", command);

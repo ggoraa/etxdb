@@ -1,6 +1,6 @@
 use crate::{
     arcmut,
-    debugger::{cli::consts::COMMANDS, state::State},
+    debugger::{cli::consts::COMMANDS, state::SessionState},
     edgetx::{self, comm::DevicePortBox, eldp},
 };
 use eyre::{bail, Result};
@@ -8,12 +8,62 @@ use eyre::{bail, Result};
 use crossterm::style::Stylize;
 use inquire::Select;
 
+use macro_rules_attribute::macro_rules_attribute;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use super::consts::quit_choice;
 
-pub async fn continue_command(device_port: arcmut!(DevicePortBox)) -> Result<()> {
+// Shamelessly stolen from https://users.rust-lang.org/t/how-to-store-async-function-pointer/38343/4
+
+macro_rules! dyn_async {(
+    $( #[$attr:meta] )* // includes doc strings
+    $pub:vis
+    async
+    fn $fname:ident<$lt:lifetime> ( $($args:tt)* ) $(-> $Ret:ty)?
+    {
+        $($body:tt)*
+    }
+) => (
+    $( #[$attr] )*
+    #[allow(unused_parens)]
+    $pub
+    fn $fname<$lt> ( $($args)* ) -> ::std::pin::Pin<::std::boxed::Box<
+        dyn ::std::future::Future<Output = ($($Ret)?)>
+            + ::std::marker::Send + $lt
+    >>
+    {
+        ::std::boxed::Box::pin(async move { $($body)* })
+    }
+);
+(
+    $( #[$attr:meta] )* // includes doc strings
+    $pub:vis
+    async
+    fn $fname:ident( $($args:tt)* ) $(-> $Ret:ty)?
+    {
+        $($body:tt)*
+    }
+) => (
+    $( #[$attr] )*
+    #[allow(unused_parens)]
+    $pub
+    fn $fname( $($args)* ) -> ::std::pin::Pin<::std::boxed::Box<
+        dyn ::std::future::Future<Output = ($($Ret)?)>
+            + ::std::marker::Send
+    >>
+    {
+        ::std::boxed::Box::pin(async move { $($body)* })
+    }
+)
+}
+
+#[macro_rules_attribute(dyn_async!)]
+pub async fn continue_command(
+    args: Vec<String>,
+    state: arcmut!(SessionState),
+    device_port: arcmut!(DevicePortBox),
+) -> Result<()> {
     let msg = eldp::ExecuteCommand {
         command: Some(eldp::execute_command::Command::Continue.into()),
     };
@@ -22,9 +72,10 @@ pub async fn continue_command(device_port: arcmut!(DevicePortBox)) -> Result<()>
     Ok(())
 }
 
+#[macro_rules_attribute(dyn_async!)]
 pub async fn breakpoint_command(
     args: Vec<String>,
-    state: arcmut!(State),
+    state: arcmut!(SessionState),
     device_port: arcmut!(DevicePortBox),
 ) -> Result<()> {
     if args.get(0).is_none() || args.get(0).unwrap().is_empty() {
@@ -41,9 +92,10 @@ pub async fn breakpoint_command(
     Ok(())
 }
 
+#[macro_rules_attribute(dyn_async!)]
 pub async fn print_command(
     args: Vec<String>,
-    state: arcmut!(State),
+    state: arcmut!(SessionState),
     device_port: arcmut!(DevicePortBox),
 ) -> Result<()> {
     if args.get(0).is_none() || args.get(0).unwrap().is_empty() {
@@ -62,7 +114,12 @@ pub async fn print_command(
     Ok(())
 }
 
-pub async fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePortBox)) {
+#[macro_rules_attribute(dyn_async!)]
+pub async fn quit_command(
+    args: Vec<String>,
+    state: arcmut!(SessionState),
+    device_port: arcmut!(DevicePortBox),
+) -> Result<()> {
     let answer = Select::new(
         "You sure you want to stop this session and quit?",
         vec![
@@ -89,6 +146,8 @@ pub async fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePort
         quit_choice::ABORT => println!("Aborted."),
         _ => panic!("What the shit??"),
     }
+
+    Ok(())
 }
 
 pub fn help_command(args: Vec<String>) -> Result<()> {

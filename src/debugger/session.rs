@@ -10,12 +10,12 @@ use tokio::time::timeout;
 use eyre::Result;
 
 use super::cli;
-use super::state::State;
+use super::state::SessionState;
 use crate::debugger::cli::interactive_stdin::InteractiveStdin;
 use crate::edgetx::comm::DevicePortBox;
 use crate::{arcmut, debugger, new_arcmut};
 
-pub async fn begin(device_port: arcmut!(DevicePortBox), mut state: State) -> Result<()> {
+pub async fn begin(device_port: arcmut!(DevicePortBox), mut state: SessionState) -> Result<()> {
     // all of this is so that they can be safely accessed
     // between tasks
     let state = new_arcmut!(state);
@@ -31,7 +31,7 @@ pub async fn begin(device_port: arcmut!(DevicePortBox), mut state: State) -> Res
 }
 
 async fn cli_task(
-    state: arcmut!(State),
+    state: arcmut!(SessionState),
     device_port: arcmut!(DevicePortBox),
     mut stdin: InteractiveStdin,
 ) -> Result<()> {
@@ -49,7 +49,7 @@ async fn cli_task(
 
 async fn device_port_task(
     device_port: arcmut!(DevicePortBox),
-    state: arcmut!(State),
+    state: arcmut!(SessionState),
 ) -> Result<()> {
     let mut rx_buf = vec![0; 1024];
 

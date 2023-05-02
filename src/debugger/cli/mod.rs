@@ -1,8 +1,12 @@
+use crate::edgetx::comm::DevicePort;
 use crate::{arcmut, edgetx::comm::DevicePortBox};
 
 use self::consts::COMMANDS;
-use super::state::State;
+use super::state::SessionState;
 use crossterm::style::Stylize;
+use eyre::Result;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -13,7 +17,7 @@ pub mod interactive_stdin;
 pub async fn execute(
     command: String,
     args: Vec<String>,
-    state: arcmut!(State),
+    state: arcmut!(SessionState),
     device_port: arcmut!(DevicePortBox),
 ) {
     #![allow(clippy::unit_arg)]
@@ -21,21 +25,7 @@ pub async fn execute(
         .iter()
         .find(|c| c.name.starts_with(&command.replace('\r', "")));
     if let Some(found_command) = found_command {
-        let result = match found_command.name {
-            "help" => commands::help_command(args),
-            "continue" => commands::continue_command(device_port).await,
-            "breakpoint" => commands::breakpoint_command(args, state, device_port).await,
-            "print" => commands::print_command(args, state, device_port).await,
-            "quit" => Ok(commands::quit_command(state, device_port).await),
-            _ => {
-                println!(
-                    "{} {}.",
-                    "Unknown command".yellow(),
-                    command.clone().yellow().italic()
-                );
-                Ok(())
-            }
-        };
+        let result = (found_command.handler)(args, state, device_port).await;
 
         if let Err(err) = result {
             println!(
@@ -53,9 +43,15 @@ pub struct Command<'a> {
     name: &'a str,
     short_help: &'a str,
     help: &'a str,
+    handler: fn(
+        Vec<String>,
+        Arc<Mutex<SessionState>>,
+        Arc<Mutex<DevicePortBox>>,
+    ) -> Pin<Box<(dyn Future<Output = Result<()>> + Send + 'static)>>,
 }
 
-pub struct CommandAlias<'a> {
-    name: &'a str,
-    aliased_to: &'a str,
-}
+// uncomment when it becomes needed
+// pub struct CommandAlias<'a> {
+//     name: &'a str,
+//     aliased_to: &'a str,
+// }

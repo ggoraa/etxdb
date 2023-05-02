@@ -1,4 +1,4 @@
-use self::state::State;
+use self::state::SessionState;
 use crate::config;
 use crate::edgetx;
 use crate::edgetx::comm::DevicePortBox;
@@ -112,7 +112,7 @@ pub async fn start(port: String) -> Result<()> {
                 inf.device_identifier.unwrap()
             );
 
-            let state = State {
+            let state = SessionState {
                 script: PathBuf::from(config.target),
                 system_info: info,
             };

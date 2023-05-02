@@ -1,9 +1,6 @@
 use crate::{
     arcmut,
-    debugger::{
-        cli::consts::{COMMANDS, VALID_COMMANDS},
-        state::State,
-    },
+    debugger::{cli::consts::COMMANDS, state::State},
     edgetx::{self, comm::DevicePortBox, eldp},
 };
 use eyre::{bail, Result};
@@ -14,7 +11,7 @@ use inquire::Select;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-use super::consts::{QUIT_NO_CHOICE, QUIT_STOP_YES_CHOICE, QUIT_YES_CHOICE};
+use super::consts::quit_choice;
 
 pub async fn continue_command(device_port: arcmut!(DevicePortBox)) -> Result<()> {
     let msg = eldp::ExecuteCommand {
@@ -68,12 +65,12 @@ pub async fn print_command(
 pub async fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePortBox)) {
     let answer = Select::new(
         "You sure you want to stop this session and quit?",
-        vec![QUIT_STOP_YES_CHOICE, QUIT_YES_CHOICE, QUIT_NO_CHOICE],
+        vec![quit_choice::STOP_AND_QUIT, quit_choice::QUIT, quit_choice::ABORT],
     )
     .prompt();
 
     match answer.unwrap() {
-        QUIT_STOP_YES_CHOICE => {
+        quit_choice::STOP_AND_QUIT => {
             let response = edgetx::comm::send_request(
                 device_port.clone(),
                 eldp::make_request(edgetx::eldp::request::Content::ExecuteCommand(
@@ -84,8 +81,8 @@ pub async fn quit_command(state: arcmut!(State), device_port: arcmut!(DevicePort
             );
             todo!("Implement shutdown");
         }
-        QUIT_YES_CHOICE => todo!("Implement shutdown"),
-        QUIT_NO_CHOICE => {}
+        quit_choice::QUIT => todo!("Implement shutdown"),
+        quit_choice::ABORT => println!("Aborted."),
         _ => panic!("What the shit??"),
     }
 }
@@ -94,16 +91,15 @@ pub fn help_command(args: Vec<String>) -> Result<()> {
     if let Some(command) = args.get(0) {
         if let Some(command) = COMMANDS
             .iter()
-            .into_iter()
-            .find(|c| c.name == command || c.aliases.contains(&command.as_str()))
+            .find(|c| c.name.starts_with(command) )
         {
             todo!()
         } else {
             bail!("Unknown command {}", command);
         }
     } else {
-        let longest_str = VALID_COMMANDS.iter().fold(VALID_COMMANDS[0], |acc, &item| {
-            if item.len() > acc.len() {
+        let longest_cmd = COMMANDS.iter().fold(&COMMANDS[0], |acc, item| {
+            if item.name.len() > acc.name.len() {
                 item
             } else {
                 acc
@@ -113,13 +109,8 @@ pub fn help_command(args: Vec<String>) -> Result<()> {
         println!("{}", "Debugger commands:".white().bold());
         for command in COMMANDS.iter() {
             println!(
-                "- {}{}  {}",
-                if command.aliases.is_empty() {
-                    "".to_string()
-                } else {
-                    format!("({:?})", command.aliases)
-                },
-                format!("{:width$}", command.name, width = longest_str.len()).bold(),
+                "- {}  {}",
+                format!("{:width$}", command.name, width = longest_cmd.name.len()).bold(),
                 command.help.italic()
             );
         }

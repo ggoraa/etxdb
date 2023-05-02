@@ -1,43 +1,39 @@
-use super::Command;
-use lazy_static::lazy_static;
+use super::{Command, CommandAlias};
 
-lazy_static! {
+// TODO: Fill in help text
 
-pub static ref COMMANDS: [Command<'static>; 4] = [
+pub static COMMANDS: [Command; 4] = [
     Command {
         name: "continue",
-        help: "continue command help text",
-        aliases: vec!["c"],
+        help: "continue command help",
+        short_help: "continue command short help",
     },
     Command {
         name: "breakpoint",
-        aliases: vec!["b"],
-        help: "breakpoint command help text", // TODO: Fill
+        help: "breakpoint command help",
+        short_help: "breakpoint command short help",
     },
     Command {
         name: "print",
-        aliases: vec!["p"],
-        help: "print command help text", // TODO: Fill
+        help: "print command help",
+        short_help: "print command short help",
     },
     Command {
         name: "quit",
-        aliases: vec!["q"],
-        help: "Stops current debugging session and exits etxdb.",
+        help: "quit command help",
+        short_help: "Stops current debugging session and exits etxdb.",
     },
 ];
-    pub static ref VALID_COMMANDS: Vec<&'static str> = {
-        COMMANDS
-            .iter()
-            .flat_map(|command| {
-                let mut vec = vec![command.name];
-                let mut aliases = command.aliases.clone();
-                vec.append(&mut aliases);
-                vec
-            })
-            .collect()
-    };
-}
 
-pub const QUIT_STOP_YES_CHOICE: &str = "Yes, stop and quit";
-pub const QUIT_YES_CHOICE: &str = "Yes, quit but don't stop";
-pub const QUIT_NO_CHOICE: &str = "No, abort!";
+pub static COMMAND_ALIASES: [CommandAlias; 1] = [
+    CommandAlias {
+        name: "c",
+        aliased_to: "continue",
+    }
+];
+
+pub mod quit_choice {
+    pub const STOP_AND_QUIT: &str = "Yes, stop and quit";
+    pub const QUIT: &str = "Yes, quit but don't stop";
+    pub const ABORT: &str = "No, abort!";
+}

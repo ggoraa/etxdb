@@ -28,3 +28,9 @@ impl InteractiveStdin {
         self.chan.recv().await.transpose()
     }
 }
+
+impl Default for InteractiveStdin {
+    fn default() -> Self {
+        Self::new()
+    }
+}

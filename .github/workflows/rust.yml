@@ -1,4 +1,4 @@
-name: Rust
+name: Build, Test, Upload
 
 on:
   push:
@@ -10,45 +10,72 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  ubuntu:
-
-    runs-on: ubuntu-latest
-
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
-    - uses: actions/checkout@v3
-    - name: Install protoc
-      run: |
-        PROTOC_VERSION=$(curl -s "https://api.github.com/repos/protocolbuffers/protobuf/releases/latest" | grep -Po '"tag_name": "v\K[0-9.]+')
-        curl -Lo protoc.zip "https://github.com/protocolbuffers/protobuf/releases/latest/download/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
-        sudo unzip -q protoc.zip bin/protoc -d /usr/local
-        sudo chmod a+x /usr/local/bin/protoc
-        protoc --version
-        rm -rf protoc.zip
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
-  macos:
-
-    runs-on: macos-latest
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Install protoc
-      run: brew install protobuf
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
-  # build:
-
-  #   runs-on: windows-latest
-
-  #   steps:
-  #   - uses: actions/checkout@v3
-  #   - name: Install protoc
-  #     run: sudo apt install protobuf-compiler -y
-  #   - name: Build
-  #     run: cargo build --verbose
-  #   - name: Run tests
-  #     run: cargo test --verbose
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      - name: Install protoc (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          PROTOC_VERSION=$(curl -s "https://api.github.com/repos/protocolbuffers/protobuf/releases/latest" | grep -Po '"tag_name": "v\K[0-9.]+')
+          curl -Lo protoc.zip "https://github.com/protocolbuffers/protobuf/releases/latest/download/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+          sudo unzip -q protoc.zip bin/protoc -d /usr/local
+          sudo chmod a+x /usr/local/bin/protoc
+          protoc --version
+          rm -rf protoc.zip
+      - name: Install protoc (macOS)
+        if: matrix.os == 'macos-latest'
+        run: brew install protobuf
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Build Binary
+        run: |
+          cargo build --release
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: nightly
+          release_name: Nightly Release
+          draft: false
+          prerelease: true
+      - name: Upload Linux Binary
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: etxdb-linux
+          path: target/release/etxdb
+      - name: Upload macOS Binary
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: etxdb-macos
+          path: target/release/etxdb
+      - name: Add Linux Binary to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/target/release/myapp
+          asset_name: myapp-linux
+          asset_content_type: application/octet-stream
+          if: matrix.os == 'ubuntu-latest'
+      - name: Add macOS Binary to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/target/release/myapp
+          asset_name: myapp-macos
+          asset_content_type: application/octet-stream
+          if: matrix.os == 'macos-latest'

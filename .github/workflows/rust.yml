@@ -11,6 +11,7 @@ env:
 
 jobs:
   build:
+    name: Build
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -61,7 +62,7 @@ jobs:
       - name: Zip release file
         uses: montudor/action-zip@v1
         with:
-          args: zip -qq -j -r ${{ env.release_filename }} ./artifacts
+          args: zip -r ${{ env.release_filename }} artifacts
 
       - name: Deploy release
         uses: marvinpinto/action-automatic-releases@latest

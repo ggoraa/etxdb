@@ -1,4 +1,3 @@
-use crate::edgetx::comm::DevicePort;
 use crate::{arcmut, edgetx::comm::DevicePortBox};
 
 use self::consts::COMMANDS;
@@ -39,15 +38,17 @@ pub async fn execute(
     }
 }
 
+type CommandHandler = fn(
+    Vec<String>,
+    Arc<Mutex<SessionState>>,
+    Arc<Mutex<DevicePortBox>>,
+) -> Pin<Box<(dyn Future<Output = Result<()>> + Send + 'static)>>;
+
 pub struct Command<'a> {
     name: &'a str,
     short_help: &'a str,
     help: &'a str,
-    handler: fn(
-        Vec<String>,
-        Arc<Mutex<SessionState>>,
-        Arc<Mutex<DevicePortBox>>,
-    ) -> Pin<Box<(dyn Future<Output = Result<()>> + Send + 'static)>>,
+    handler: CommandHandler,
 }
 
 // uncomment when it becomes needed

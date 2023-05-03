@@ -8,6 +8,7 @@ pub mod cli;
 pub mod config;
 pub mod debugger;
 pub mod edgetx;
+pub mod macros;
 
 #[tokio::main]
 async fn main() -> Result<()> {

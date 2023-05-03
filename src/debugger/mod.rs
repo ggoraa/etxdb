@@ -3,6 +3,7 @@ use crate::config;
 use crate::edgetx;
 use crate::edgetx::comm::DevicePortBox;
 use crate::edgetx::eldp;
+use crate::new_arcmut;
 use eyre::bail;
 use eyre::Result;
 use lazy_static::lazy_static;
@@ -17,38 +18,6 @@ pub mod cli;
 pub mod consts;
 pub mod session;
 pub mod state;
-
-#[macro_export]
-macro_rules! arcmutm {
-    ($typename:path) => {
-        Arc<Mutex<&mut $typename>>
-    };
-
-    ($typename:path, $lifetime:lifetime) => {
-        Arc<Mutex<&$lifetime mut $typename>>
-    };
-}
-
-#[macro_export]
-macro_rules! new_arcmutm {
-    ($value:expr) => {
-        Arc::new(Mutex::new(&mut $value))
-    };
-}
-
-#[macro_export]
-macro_rules! arcmut {
-    ($typename:path) => {
-        Arc<Mutex<$typename>>
-    };
-}
-
-#[macro_export]
-macro_rules! new_arcmut {
-    ($value:expr) => {
-        Arc::new(Mutex::new($value))
-    };
-}
 
 lazy_static! {
     static ref IP_ADDRESS_REGEX: Regex = Regex::new(r"(\d+\.\d+\.\d+\.\d+):(\d+)").unwrap();

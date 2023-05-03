@@ -1,7 +1,7 @@
 use crate::{
     arcmut,
     debugger::{cli::consts::COMMANDS, state::SessionState},
-    edgetx::{self, comm::DevicePortBox, eldp},
+    edgetx::{self, comm::DevicePortBox, eldp}, dyn_async,
 };
 use eyre::{bail, Result};
 
@@ -14,60 +14,16 @@ use tokio::sync::Mutex;
 
 use super::consts::quit_choice;
 
-// Shamelessly stolen from https://users.rust-lang.org/t/how-to-store-async-function-pointer/38343/4
-
-macro_rules! dyn_async {(
-    $( #[$attr:meta] )* // includes doc strings
-    $pub:vis
-    async
-    fn $fname:ident<$lt:lifetime> ( $($args:tt)* ) $(-> $Ret:ty)?
-    {
-        $($body:tt)*
-    }
-) => (
-    $( #[$attr] )*
-    #[allow(unused_parens)]
-    $pub
-    fn $fname<$lt> ( $($args)* ) -> ::std::pin::Pin<::std::boxed::Box<
-        dyn ::std::future::Future<Output = ($($Ret)?)>
-            + ::std::marker::Send + $lt
-    >>
-    {
-        ::std::boxed::Box::pin(async move { $($body)* })
-    }
-);
-(
-    $( #[$attr:meta] )* // includes doc strings
-    $pub:vis
-    async
-    fn $fname:ident( $($args:tt)* ) $(-> $Ret:ty)?
-    {
-        $($body:tt)*
-    }
-) => (
-    $( #[$attr] )*
-    #[allow(unused_parens)]
-    $pub
-    fn $fname( $($args)* ) -> ::std::pin::Pin<::std::boxed::Box<
-        dyn ::std::future::Future<Output = ($($Ret)?)>
-            + ::std::marker::Send
-    >>
-    {
-        ::std::boxed::Box::pin(async move { $($body)* })
-    }
-)
-}
-
 #[macro_rules_attribute(dyn_async!)]
 pub async fn continue_command(
     args: Vec<String>,
     state: arcmut!(SessionState),
     device_port: arcmut!(DevicePortBox),
 ) -> Result<()> {
-    let msg = eldp::ExecuteCommand {
-        command: Some(eldp::execute_command::Command::Continue.into()),
+    let msg = eldp::RunExecutionFlowCommand {
+        command: Some(eldp::run_execution_flow_command::Command::Continue.into()),
     };
-    let request = eldp::make_request(eldp::request::Content::ExecuteCommand(msg));
+    let request = eldp::make_request(eldp::request::Content::RunExecutionFlowCommand(msg));
     let response = edgetx::comm::send_request(device_port, request).await?;
     Ok(())
 }
@@ -134,9 +90,9 @@ pub async fn quit_command(
         quit_choice::STOP_AND_QUIT => {
             let response = edgetx::comm::send_request(
                 device_port.clone(),
-                eldp::make_request(edgetx::eldp::request::Content::ExecuteCommand(
-                    eldp::ExecuteCommand {
-                        command: Some(eldp::execute_command::Command::Stop.into()),
+                eldp::make_request(edgetx::eldp::request::Content::RunExecutionFlowCommand(
+                    eldp::RunExecutionFlowCommand {
+                        command: Some(eldp::run_execution_flow_command::Command::Stop.into()),
                     },
                 )),
             );
@@ -171,7 +127,7 @@ pub fn help_command(args: Vec<String>) -> Result<()> {
             println!(
                 "- {}  {}",
                 format!("{:width$}", command.name, width = longest_cmd.name.len()).bold(),
-                command.help.italic()
+                command.short_help.italic()
             );
         }
     }

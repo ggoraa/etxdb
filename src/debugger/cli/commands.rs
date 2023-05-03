@@ -1,7 +1,8 @@
 use crate::{
     arcmut,
     debugger::{cli::consts::COMMANDS, state::SessionState},
-    edgetx::{self, comm::DevicePortBox, eldp}, dyn_async,
+    dyn_async,
+    edgetx::{self, comm::DevicePortBox, eldp},
 };
 use eyre::{bail, Result};
 

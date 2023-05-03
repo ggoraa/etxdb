@@ -18,7 +18,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Install protoc (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -31,10 +31,6 @@ jobs:
       - name: Install protoc (macOS)
         if: matrix.os == 'macos-latest'
         run: brew install protobuf
-      - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
       - name: Build Binary
         run: |
           cargo build --release
@@ -60,16 +56,10 @@ jobs:
       - name: Compose release filename
         run: echo "release_filename=etxdb-${GITHUB_SHA::8}.zip" >> $GITHUB_ENV
 
-      - name: Zip release file
-        uses: montudor/action-zip@v1
-        with:
-          args: zip -r ${{ env.release_filename }} artifacts
-
       - name: Deploy release
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: 'nightly'
           prerelease: true
-          files: |
-            *.zip
+          files: artifacts/*
